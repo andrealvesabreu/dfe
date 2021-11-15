@@ -1,0 +1,26 @@
+{
+	"keywords" : [
+		"DFe"
+	],
+	"autoload" : {
+		"psr-4" : {
+			"Inspire\\Dfe\\" : "src"
+		}
+	},
+	"name" : "inspire/dfe",
+	"type" : "library",
+	"description" : "Basic library for integration with DFe brasilian system",
+	"license" : "MIT",
+	"require" : {
+		"php" : ">=7.4",
+		"inspire/core" : "~0.1",
+		"openlss/lib-array2xml" : "~1.0",
+		"spatie/array-to-xml" : "~3.1",
+		"inspire/validator" : "~0.1"
+	},
+	"authors" : [{
+			"name" : "André Alves",
+			"email" : "aluisalves0@gmail.com"
+		}
+	]
+}
