@@ -3,7 +3,6 @@ declare(strict_types = 1);
 namespace Inspire\Dfe\Xml;
 
 use Inspire\Core\Message\XmlMessage;
-use Inspire\Core\Utils\Strings;
 
 /**
  * Description of Parser
@@ -105,7 +104,7 @@ class Xml extends XmlMessage
      */
     public static function xmlToArray(string $xml): array
     {
-        return \LSS\XML2Array::createArray($xml);
+        return XML2Array::createArray($xml);
     }
 
     /**
