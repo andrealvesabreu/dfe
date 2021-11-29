@@ -14,7 +14,6 @@
 	"require" : {
 		"php" : ">=7.4",
 		"inspire/core" : "~0.1",
-		"openlss/lib-array2xml" : "~1.0",
 		"spatie/array-to-xml" : "~3.1",
 		"inspire/validator" : "~0.1"
 	},
