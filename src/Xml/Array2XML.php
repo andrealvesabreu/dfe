@@ -96,10 +96,11 @@ class Array2XML
      * @param
      *            $format_output
      */
-    public static function init($version = '1.0', $encoding = 'UTF-8', $format_output = true)
+    public static function init($version = '1.0', $encoding = 'UTF-8', $format_output = false)
     {
-        self::$xml = new \DOMDocument(self::$version ?? $version, self::$encoding ?? $encoding);
-        self::$xml->formatOutput = self::$format_output ?? $format_output;
+        self::$xml = new \DomDocument($version, $encoding);
+        self::$xml->formatOutput = $format_output;
+        self::$encoding = $encoding;
     }
 
     /**
@@ -109,7 +110,7 @@ class Array2XML
      *            - name of the root node to be converted
      * @param array $arr
      *            - aray to be converterd
-     * @return \DOMDocument
+     * @return \DomDocument
      */
     public static function &createXML($node_name, $arr = array())
     {
@@ -220,12 +221,12 @@ class Array2XML
     /*
      * Get string representation of boolean value
      */
-    private static function bool2str($v)
+    private static function bool2str($v): string
     {
         // convert boolean to text value.
         $v = $v === true ? 'true' : $v;
         $v = $v === false ? 'false' : $v;
-        return $v;
+        return (string) $v;
     }
 
     /*
@@ -237,35 +238,4 @@ class Array2XML
         $pattern = '/^[a-z_]+[a-z0-9\:\-\.\_]*[^:]*$/i';
         return preg_match($pattern, $tag, $matches) && $matches[0] == $tag;
     }
-
-    /**
-     * Enable/disable default format DOMDocument
-     *
-     * @param bool $format
-     */
-    public static function format(bool $format)
-    {
-        self::$format_output = $format;
-    }
-
-    /**
-     * Set default encoding for DOMDocument
-     *
-     * @param bool $encoding
-     */
-    public static function encoding(string $encoding)
-    {
-        self::$encoding = $encoding;
-    }
-
-    /**
-     * Set default version for DOMDocument
-     *
-     * @param bool $format
-     */
-    public static function version(bool $version)
-    {
-        self::$version = $version;
-    }
 }
-

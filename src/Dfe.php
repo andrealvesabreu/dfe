@@ -834,6 +834,7 @@ class Dfe
         $saveDocument = false;
         switch ($this->urlService) {
             case 'CteRecepcaoEvento':
+            case 'MDFeRecepcaoEvento':
                 $match = [];
                 if (preg_match('/tpEvento>(.*?)<\/tpEvento/', $xml->getXml(), $match) == 1) {
                     switch ($match[1]) {
@@ -856,14 +857,9 @@ class Dfe
                 }
                 break;
             case 'CteRecepcao':
-                $resp = [
-                    'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
-                    'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response"),
-                    'document' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.signed")
-                ];
-                $saveDocument = true;
-                break;
             case 'CteRecepcaoOS':
+            case 'MDFeRecepcao':
+            case 'MDFeRecepcaoSinc':
                 $resp = [
                     'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
                     'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response"),
@@ -872,6 +868,7 @@ class Dfe
                 $saveDocument = true;
                 break;
             case 'CteRetRecepcao':
+            case 'MDFeRetRecepcao':
                 $resp = [
                     'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
                     'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response"),
@@ -880,6 +877,7 @@ class Dfe
                 $saveDocument = true;
                 break;
             default:
+                echo "dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request";
                 $resp = [
                     'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
                     'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response")

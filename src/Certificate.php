@@ -87,7 +87,7 @@ class Certificate
         $this->pass = $pass;
         if (! file_exists($this->pfxFile) || ! is_readable($this->pfxFile) || ! is_file($this->pfxFile)) {
             return new SystemMessage("PFX file not found.", // Message
-            100, // System code
+            '100', // System code
             Message::MSG_ERROR, // Message type
             false);
         }
@@ -107,18 +107,18 @@ class Certificate
             $context = new PublicKey(file_get_contents($this->pubKeyFile));
             if ($context->isExpired()) {
                 return new SystemMessage("Digital certificate expired on {$context->validTo->format('Y-m-d H:i:s')}", // Message
-                100, // System code
+                '100', // System code
                 Message::MSG_ERROR, // Message type
                 false);
             }
         } else {
             return new SystemMessage("Digital certificate not found.", // Message
-            100, // System code
+            '100', // System code
             Message::MSG_ERROR, // Message type
             false);
         }
         return new SystemMessage("Digital certificate OK.", // Message
-        100, // System code
+        '100', // System code
         Message::MSG_OK, // Message type
         true);
     }

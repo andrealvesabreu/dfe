@@ -89,7 +89,7 @@ class Xml extends XmlMessage
             $root = array_keys($data)[0];
             $data = $data[$root];
         }
-        $xml = \Spatie\ArrayToXml\ArrayToXml::convert($data, $root);
+        $xml = Array2XML::createXML($root, $data)->saveXML();
         if ($self) {
             return new Xml($xml);
         }
