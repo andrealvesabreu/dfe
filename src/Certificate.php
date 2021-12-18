@@ -122,7 +122,7 @@ class Certificate
         Message::MSG_OK, // Message type
         true);
         $okMessage->addExtra([
-            "Certificate valid until {$context->validTo->format('Y-m-d H:i:s')}"
+            'expiresIn' => $context->validTo->format('Y-m-d H:i:s')
         ]);
         return $okMessage;
     }
