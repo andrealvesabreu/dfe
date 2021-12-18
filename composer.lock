@@ -730,12 +730,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/andrealvesabreu/core.git",
-                "reference": "b5740639e767ef49a58bad265203cf4f5d31d7f3"
+                "reference": "196fcf8f945c18e2ce39288d040885a917b2b557"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/andrealvesabreu/core/zipball/b5740639e767ef49a58bad265203cf4f5d31d7f3",
-                "reference": "b5740639e767ef49a58bad265203cf4f5d31d7f3",
+                "url": "https://api.github.com/repos/andrealvesabreu/core/zipball/196fcf8f945c18e2ce39288d040885a917b2b557",
+                "reference": "196fcf8f945c18e2ce39288d040885a917b2b557",
                 "shasum": ""
             },
             "require": {
@@ -774,7 +774,7 @@
                 "issues": "https://github.com/andrealvesabreu/core/issues",
                 "source": "https://github.com/andrealvesabreu/core/tree/0.1.0"
             },
-            "time": "2021-12-18T22:50:40+00:00"
+            "time": "2021-12-18T23:00:49+00:00"
         },
         {
             "name": "inspire/validator",
