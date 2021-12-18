@@ -117,7 +117,7 @@ class Certificate
             Message::MSG_ERROR, // Message type
             false);
         }
-        return new SystemMessage("Digital certificate OK.", // Message
+        return new SystemMessage("Digital certificate OK valid until {$context->validTo->format('Y-m-d H:i:s')}.", // Message
         '100', // System code
         Message::MSG_OK, // Message type
         true);
