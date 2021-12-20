@@ -12,6 +12,7 @@ return [
         ],
         [
             'name' => 'mdfe',
+            'paths' => require 'dfe/mdfe_paths.php',
             '300' => require 'dfe/mdfe_300.php'
         ]
     ]

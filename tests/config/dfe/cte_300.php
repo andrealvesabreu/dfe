@@ -8,7 +8,7 @@ return [
     '1' => [
         'MG' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://cte.fazenda.mg.gov.br/cte/services/CteRecepcao'
@@ -52,7 +52,7 @@ return [
         ],
         'MS' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://producao.cte.ms.gov.br/ws/CteRecepcao'
@@ -96,7 +96,7 @@ return [
         ],
         'MT' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://cte.sefaz.mt.gov.br/ctews/services/CteRecepcao'
@@ -140,7 +140,7 @@ return [
         ],
         'PR' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://cte.fazenda.pr.gov.br/cte/CteRecepcao'
@@ -184,7 +184,7 @@ return [
         ],
         'RS' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://cte.svrs.rs.gov.br/ws/cterecepcao/CteRecepcao.asmx'
@@ -272,7 +272,7 @@ return [
         ],
         'SVRS' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://cte.svrs.rs.gov.br/ws/cterecepcao/CteRecepcao.asmx'
@@ -316,7 +316,7 @@ return [
         ],
         'SVSP' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://nfe.fazenda.sp.gov.br/cteWEB/services/cteRecepcao.asmx'
@@ -364,7 +364,7 @@ return [
     '2' => [
         'MG' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://hcte.fazenda.mg.gov.br/cte/services/CteRecepcao'
@@ -402,7 +402,7 @@ return [
         ],
         'MS' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://homologacao.cte.ms.gov.br/ws/CteRecepcao'
@@ -440,7 +440,7 @@ return [
         ],
         'MT' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://homologacao.sefaz.mt.gov.br/ctews/services/CteRecepcao'
@@ -478,7 +478,7 @@ return [
         ],
         'PR' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://homologacao.cte.fazenda.pr.gov.br/cte/CteRecepcao'
@@ -516,7 +516,7 @@ return [
         ],
         'RS' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://cte-homologacao.svrs.rs.gov.br/ws/cterecepcao/CteRecepcao.asmx'
@@ -592,7 +592,7 @@ return [
         ],
         'SVRS' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://cte-homologacao.svrs.rs.gov.br/ws/cterecepcao/CteRecepcao.asmx'
@@ -630,7 +630,7 @@ return [
         ],
         'SVSP' => [
             'CteRecepcao' => [
-                'method' => 'CTeRecepcao',
+                'method' => 'cteRecepcaoLote',
                 'operation' => 'CteRecepcao',
                 'version' => '3.00',
                 'url' => 'https://homologacao.nfe.fazenda.sp.gov.br/cteWEB/services/CteRecepcao.asmx'

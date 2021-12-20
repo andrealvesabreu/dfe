@@ -13,6 +13,12 @@ return [
                 'version' => '3.00',
                 'url' => 'https://mdfe.svrs.rs.gov.br/ws/MDFerecepcao/MDFeRecepcao.asmx'
             ],
+            'MDFeRecepcaoSinc' => [
+                'method' => 'mdfeRecepcao',
+                'operation' => 'MDFeRecepcaoSinc',
+                'version' => '3.00',
+                'url' => 'https://mdfe.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx'
+            ],
             'MDFeRetRecepcao' => [
                 'method' => 'mdfeRetRecepcao',
                 'operation' => 'MDFeRetRecepcao',
@@ -58,6 +64,12 @@ return [
                 'operation' => 'MDFeRecepcao',
                 'version' => '3.00',
                 'url' => 'https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFerecepcao/MDFeRecepcao.asmx'
+            ],
+            'MDFeRecepcaoSinc' => [
+                'method' => 'mdfeRecepcao',
+                'operation' => 'MDFeRecepcaoSinc',
+                'version' => '3.00',
+                'url' => 'https://mdfe-homologacao.svrs.rs.gov.br/ws/MDFeRecepcaoSinc/MDFeRecepcaoSinc.asmx'
             ],
             'MDFeRetRecepcao' => [
                 'method' => 'mdfeRetRecepcao',
