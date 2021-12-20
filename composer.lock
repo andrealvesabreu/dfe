@@ -730,12 +730,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/andrealvesabreu/core.git",
-                "reference": "196fcf8f945c18e2ce39288d040885a917b2b557"
+                "reference": "9f6beec9833a9c0281505096dec3f387c6bce2e2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/andrealvesabreu/core/zipball/196fcf8f945c18e2ce39288d040885a917b2b557",
-                "reference": "196fcf8f945c18e2ce39288d040885a917b2b557",
+                "url": "https://api.github.com/repos/andrealvesabreu/core/zipball/9f6beec9833a9c0281505096dec3f387c6bce2e2",
+                "reference": "9f6beec9833a9c0281505096dec3f387c6bce2e2",
                 "shasum": ""
             },
             "require": {
@@ -774,7 +774,7 @@
                 "issues": "https://github.com/andrealvesabreu/core/issues",
                 "source": "https://github.com/andrealvesabreu/core/tree/0.1.0"
             },
-            "time": "2021-12-18T23:00:49+00:00"
+            "time": "2021-12-20T01:29:56+00:00"
         },
         {
             "name": "inspire/validator",
@@ -782,12 +782,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/andrealvesabreu/validator.git",
-                "reference": "55d61ca5a031b2729257649c3f231c6e00dabf96"
+                "reference": "142203c5ee0d9eeefd324f3cd4cfb0a1d5315074"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/andrealvesabreu/validator/zipball/55d61ca5a031b2729257649c3f231c6e00dabf96",
-                "reference": "55d61ca5a031b2729257649c3f231c6e00dabf96",
+                "url": "https://api.github.com/repos/andrealvesabreu/validator/zipball/142203c5ee0d9eeefd324f3cd4cfb0a1d5315074",
+                "reference": "142203c5ee0d9eeefd324f3cd4cfb0a1d5315074",
                 "shasum": ""
             },
             "require": {
@@ -816,7 +816,7 @@
                 "issues": "https://github.com/andrealvesabreu/validator/issues",
                 "source": "https://github.com/andrealvesabreu/validator/tree/0.1.0"
             },
-            "time": "2021-11-15T04:13:35+00:00"
+            "time": "2021-12-20T03:23:27+00:00"
         },
         {
             "name": "monolog/monolog",

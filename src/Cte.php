@@ -7,6 +7,7 @@ use Inspire\Dfe\Xml\Xml;
 use Inspire\Core\Utils\Strings;
 use Inspire\Validator\Variable;
 use Inspire\Dfe\Xml\Array2XML;
+use Inspire\Validator\XsdSchema;
 
 /**
  * Description of Cte
@@ -111,7 +112,34 @@ class Cte extends Dfe
             ]
         ];
         $body = Xml::arrayToXml($body, null, true);
-        return $this->send($body);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consReciCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = $rec . '-' . date('Y_m_d-H_i_s');
+            // Save sent file
+            $fileSent = "{$paths['request']}/{$baseName}-consReciCTe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            // Save response file, if server has processed request succefully
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retconsReciCTe.xml";
+                file_put_contents($fileResponse, $response->getExtra('xml'));
+            }
+        }
+        return $response;
     }
 
     /**
@@ -165,7 +193,7 @@ class Cte extends Dfe
      */
     public function CteConsulta(string $chCTe): SystemMessage
     {
-        if (! Variable::nfeAccessKey($chCTe)) {
+        if (! Variable::nfeAccessKey()->validate($chCTe)) {
             return new SystemMessage("Invalid CTe key: {$chCTe}", // Message
             '1', // System code
             SystemMessage::MSG_ERROR, // System status code
@@ -187,7 +215,34 @@ class Cte extends Dfe
             ]
         ];
         $body = Xml::arrayToXml($body, null, true);
-        return $this->send($body);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consSitCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = $chCTe . '-' . date('Y_m_d-H_i_s');
+            // Save sent file
+            $fileSent = "{$paths['request']}/{$baseName}-consSitCTe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            // Save response file, if server has processed request succefully
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retConsSitCTe.xml";
+                file_put_contents($fileResponse, $response->getExtra('xml'));
+            }
+        }
+        return $response;
     }
 
     /**
@@ -212,6 +267,15 @@ class Cte extends Dfe
             ]
         ];
         $body = Xml::arrayToXml($body, null, true);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consStatServCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
         $response = $this->send($body);
         /**
          * Save files
@@ -220,6 +284,7 @@ class Cte extends Dfe
          */
         $paths = $response->getExtra('paths');
         if ($paths !== null) {
+            $dateWs = date('Y_m_d-H_i_s'); // substr($response->getExtra('parse.dhRecbto'), 0, 19);
             $baseName = str_replace([
                 '-',
                 'T',
@@ -228,7 +293,7 @@ class Cte extends Dfe
                 '_',
                 '-',
                 '_'
-            ], "{$response->getExtra('parse.cUF')}-{$response->getExtra('parse.dhRecbto')}");
+            ], "{$response->getExtra('parse.cUF')}-{$dateWs}");
             // Save sent file
             $fileSent = "{$paths['request']}/{$baseName}-consStatServCTe.xml";
             file_put_contents($fileSent, $body->getXml());
@@ -257,7 +322,7 @@ class Cte extends Dfe
     // SystemMessage::MSG_ERROR, // System status code
     // false); // System status
     // }
-    // if ((strlen($cpfCnpj) == 11 && ! Variable::cpf($cpfCnpj)) || (strlen($cpfCnpj) == 14 && ! Variable::cnpj($cpfCnpj))) {
+    // if ((strlen($cpfCnpj) == 11 && ! Variable::cpf()->validate($cpfCnpj)) || (strlen($cpfCnpj) == 14 && ! Variable::cnpj()->validate($cpfCnpj))) {
     // return new SystemMessage("Invalid CTe CPF/CNPJ: {$cpfCnpj}", // Message
     // '1', // System code
     // SystemMessage::MSG_ERROR, // System status code
@@ -306,7 +371,7 @@ class Cte extends Dfe
      */
     public function cancel(string $chCTe, int $nSeqEvent, string $nProt, string $xJust): SystemMessage
     {
-        if (! Variable::nfeAccessKey($chCTe)) {
+        if (! Variable::nfeAccessKey()->validate($chCTe)) {
             return new SystemMessage("Invalid CTe key: {$chCTe}", // Message
             '1', // System code
             SystemMessage::MSG_ERROR, // System status code

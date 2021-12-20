@@ -124,7 +124,7 @@ class Mdfe extends Dfe
      */
     public function MDFeConsulta(string $chMDFe): SystemMessage
     {
-        if (! Variable::nfeAccessKey($chMDFe)) {
+        if (! Variable::nfeAccessKey()->validate($chMDFe)) {
             return new SystemMessage("Invalid CTe key: {$chMDFe}", // Message
             '1', // System code
             SystemMessage::MSG_ERROR, // System status code
@@ -158,8 +158,8 @@ class Mdfe extends Dfe
     public function MDFeConsNaoEnc(string $doc): SystemMessage
     {
         if ((strlen($doc) != 11 && strlen($doc) != 14) || // Length validation
-        (strlen($doc) == 11 && ! Variable::cpf($doc)) || // CPF validation
-        (strlen($doc) == 14 && ! Variable::cnpj($doc))) // CNPJ validation
+        (strlen($doc) == 11 && ! Variable::cpf())->validate($doc) || // CPF validation
+        (strlen($doc) == 14 && ! Variable::cnpj()->validate($doc))) // CNPJ validation
         {
             return new SystemMessage("Invalid CPF/CNPJ: {$doc}", // Message
             '1', // System code
@@ -255,21 +255,21 @@ class Mdfe extends Dfe
     /**
      * Cancellation event
      *
-     * @param string $chCTe
+     * @param string $chMDFe
      * @param int $nSeqEvent
      * @param string $nProt
      * @param string $xJust
      * @return SystemMessage
      */
-    public function cancel(string $chCTe, int $nSeqEvent, string $nProt, string $xJust): SystemMessage
+    public function cancel(string $chMDFe, int $nSeqEvent, string $nProt, string $xJust): SystemMessage
     {
-        if (! Variable::nfeAccessKey($chCTe)) {
-            return new SystemMessage("Invalid CTe key: {$chCTe}", // Message
+        if (! Variable::nfeAccessKey()->validate($chMDFe)) {
+            return new SystemMessage("Invalid MDFe key: {$chMDFe}", // Message
             '1', // System code
             SystemMessage::MSG_ERROR, // System status code
             false); // System status
         }
-        $initialize = $this->prepare('CteRecepcaoEvento');
+        $initialize = $this->prepare('MdfeRecepcaoEvento');
         if (! $initialize->isOk()) {
             return $initialize;
         }
@@ -278,13 +278,13 @@ class Mdfe extends Dfe
             '@attributes' => [
                 'versaoEvento' => $this->urlVersion
             ],
-            'evCancCTe' => [
+            'evCancMDFee' => [
                 'descEvento' => $this->eventCode[$type],
                 'nProt' => $nProt,
                 'xJust' => $xJust
             ]
         ];
-        $xmlEvent = $this->event($chCTe, $nSeqEvent, $type, $detEvent);
+        $xmlEvent = $this->event($chMDFe, $nSeqEvent, $type, $detEvent);
         return $this->send($xmlEvent);
     }
 

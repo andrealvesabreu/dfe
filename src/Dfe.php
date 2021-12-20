@@ -408,6 +408,14 @@ class Dfe
     protected ?string $urlPortal = null;
 
     /**
+     * Base dir for XSD schemas
+     * System will validate schemas if it is set different of null
+     *
+     * @var string|null
+     */
+    protected ?string $schemaPath = null;
+
+    /**
      * URL variables of authorizing webservices
      */
 
@@ -627,9 +635,14 @@ class Dfe
         ]), $config);
         if (! empty($missing)) {
             throw new \Exception("You must provide all required fields in configuration. This fields are missing: " . implode(', ', array_flip($missing)));
-        } else if (isset($config['date']) && ! Variable::date($config['date'])) {
+        } else if (isset($config['date']) && ! Variable::date()->validate($config['date'])) {
             throw new \Exception("Date '{$config['date']}' is not a valid date in format YYY-MM-DD.");
+        } else if (isset($config['schemaPath']) && (! file_exists($config['schemaPath']) || //
+        ! is_dir($config['schemaPath']) || //
+        ! is_readable($config['schemaPath']))) {
+            throw new \Exception("Schema path '{$config['schemaPath']}' is not valid.");
         }
+
         /**
          * Set values to class attributes
          */
@@ -877,7 +890,6 @@ class Dfe
                 $saveDocument = true;
                 break;
             default:
-                echo "dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request";
                 $resp = [
                     'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
                     'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response")
