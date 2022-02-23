@@ -2,8 +2,8 @@
 declare(strict_types = 1);
 namespace Inspire\Dfe;
 
-use Inspire\Dfe\Xml\Xml;
-use Inspire\Core\System\SystemMessage;
+use Inspire\Support\Xml\Xml;
+use Inspire\Support\Message\System\SystemMessage;
 
 /**
  * Description of Soap

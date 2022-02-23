@@ -2,15 +2,13 @@
 declare(strict_types = 1);
 namespace Inspire\Dfe;
 
-use Inspire\Dfe\Xml\Xml;
-use Inspire\Core\System\ {
-    SystemMessage,
-    Config
-};
-use Inspire\Core\Utils\ {
+use Inspire\Support\Xml\Xml;
+use Inspire\Support\Message\System\SystemMessage;
+use Inspire\Support\ {
     Strings,
     Arrays
 };
+use Inspire\Config\Config;
 use Inspire\Validator\Variable;
 
 /**
@@ -804,13 +802,21 @@ class Dfe
         /**
          * Send request
          *
-         * @var \Inspire\Core\System\SystemMessage $result
+         * @var \Inspire\Support\Message\System\SystemMessage $result
          */
         $result = $soap->send($this->getHeader(), $body, $addMethod);
         $result->setExtra([
             'paths' => $paths
         ]);
+        /**
+         * If there is no problem to connect server
+         */
         if ($result->isOk()) {
+            /**
+             * Process response with ParserResponse
+             *
+             * @var mixed $parsed
+             */
             $parsed = call_user_func([
                 $parser,
                 $this->urlService
@@ -885,7 +891,8 @@ class Dfe
                 $resp = [
                     'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
                     'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response"),
-                    'document' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.authorized")
+                    'document' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.authorized"),
+                    'signed' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.signed")
                 ];
                 $saveDocument = true;
                 break;

@@ -2,7 +2,7 @@
 declare(strict_types = 1);
 use Inspire\Dfe\Cte;
 use Inspire\Dfe\Certificate;
-use Inspire\Core\System\Config;
+use Inspire\Config\Config;
 
 define('APP_NAME', 'test');
 define('ROOT_DIR', dirname(__DIR__));
@@ -20,13 +20,16 @@ try {
         'mod' => '57',
         'version' => '3.00',
         'saveFiles' => true,
-        'xUF' => 'MS',
-        'xUFAut' => 'MS',
+        'xUF' => 'PR',
+        'xUFAut' => 'PR',
         'tpAmb' => 1,
         'CNPJ' => '94001641000538',
-        'date' => '2019-02-28'
+        'date' => '2019-02-28',
+        'schemaPath' => ROOT_DIR . '/tests/schemas/CTe3.00a'
     ], $cert);
-    var_dump($cte->CteStatusServico());
+    // var_dump($cte->CteStatusServico());
+    // var_dump($cte->CteConsulta('43211227270649000189579990000000011867642116'));
+    var_dump($cte->CteRetRecepcao('411000204879037')); // 411000204412859
 } catch (Exception $ex) {
     var_dump($ex->getMessage());
 }

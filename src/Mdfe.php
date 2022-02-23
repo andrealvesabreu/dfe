@@ -2,12 +2,10 @@
 declare(strict_types = 1);
 namespace Inspire\Dfe;
 
-use Inspire\Core\System\SystemMessage;
-use Inspire\Dfe\Xml\Xml;
-use Inspire\Core\Utils\Strings;
+use Inspire\Support\Message\System\SystemMessage;
 use Inspire\Validator\Variable;
-use Inspire\Dfe\Xml\Array2XML;
-use Inspire\Core\Utils\Arrays;
+use Inspire\Support\Xml\Xml;
+use Inspire\Support\Arrays;
 
 /**
  * Description of Mdfe
@@ -120,7 +118,7 @@ class Mdfe extends Dfe
      * Query document on webservice
      *
      * @param string $chMDFe
-     * @return \Inspire\Core\System\SystemMessage
+     * @return \Inspire\Support\Message\System\SystemMessage
      */
     public function MDFeConsulta(string $chMDFe): SystemMessage
     {
@@ -153,7 +151,7 @@ class Mdfe extends Dfe
      * Query document on webservice
      *
      * @param string $chMDFe
-     * @return \Inspire\Core\System\SystemMessage
+     * @return \Inspire\Support\Message\System\SystemMessage
      */
     public function MDFeConsNaoEnc(string $doc): SystemMessage
     {
@@ -208,7 +206,7 @@ class Mdfe extends Dfe
     /**
      * Query WS status
      *
-     * @return \Inspire\Core\System\SystemMessage
+     * @return \Inspire\Support\Message\System\SystemMessage
      */
     public function MDFeStatusServico(): SystemMessage
     {

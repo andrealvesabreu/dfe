@@ -2,7 +2,7 @@
 declare(strict_types = 1);
 namespace Inspire\Dfe;
 
-use Inspire\Core\System\ {
+use Inspire\Support\Message\System\ {
     SystemMessage,
     Message
 };

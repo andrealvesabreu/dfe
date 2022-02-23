@@ -2,12 +2,17 @@
 declare(strict_types = 1);
 namespace Inspire\Dfe;
 
-use Inspire\Core\System\SystemMessage;
-use Inspire\Dfe\Xml\Xml;
-use Inspire\Core\Utils\Strings;
-use Inspire\Validator\Variable;
-use Inspire\Dfe\Xml\Array2XML;
-use Inspire\Validator\XsdSchema;
+use Inspire\Support\Message\System\SystemMessage;
+use Inspire\Support\Xml\Xml;
+use Inspire\Validator\ {
+    Variable,
+    XsdSchema
+};
+use Inspire\Dfe\Cte\ParserResponse;
+use Inspire\Support\ {
+    Arrays,
+    Strings
+};
 
 /**
  * Description of Cte
@@ -137,6 +142,16 @@ class Cte extends Dfe
             if ($response->isOk()) {
                 $fileResponse = "{$paths['response']}/{$baseName}-retconsReciCTe.xml";
                 file_put_contents($fileResponse, $response->getExtra('xml'));
+                /**
+                 * Check for errors
+                 */
+                foreach ($response->getExtra('parse')['protCTe'] as $protCTe) {
+                    $parseCode = ParserResponse::getResponseCode(Arrays::get($protCTe, 'infProt.cStat'));
+                    print_r($parseCode);
+                    $xtp = new Xml('/home/aalves/eclipse-workspace/dfe/storage/xmls/cte/94001641000538/201902/producao/assinadas/41211294001641000457570020000769711942720311-cte.xml');
+                    var_dump($xtp->xpathXml('/infCte/rem/IE', 0));
+                }
+                // if(Parse)
             }
         }
         return $response;
@@ -150,7 +165,7 @@ class Cte extends Dfe
      * @param int $nFin
      * @param string $xJust
      * @param int $year
-     * @return \Inspire\Core\System\SystemMessage
+     * @return \Inspire\Support\Message\System\SystemMessage
      */
     public function CteInutilizacao(int $nSerie, int $nIni, int $nFin, string $xJust, ?int $year = null): SystemMessage
     {
@@ -189,7 +204,7 @@ class Cte extends Dfe
      * Query document on webservice
      *
      * @param string $chCTe
-     * @return \Inspire\Core\System\SystemMessage
+     * @return \Inspire\Support\Message\System\SystemMessage
      */
     public function CteConsulta(string $chCTe): SystemMessage
     {
@@ -248,7 +263,7 @@ class Cte extends Dfe
     /**
      * Query WS status
      *
-     * @return \Inspire\Core\System\SystemMessage
+     * @return \Inspire\Support\Message\System\SystemMessage
      */
     public function CteStatusServico(): SystemMessage
     {
