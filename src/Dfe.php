@@ -44,6 +44,10 @@ class Dfe
      * @var array
      */
     protected array $servicesAvailable = [
+        '55' => [
+            'NfeStatusServico',
+            'NfeDistribuicaoDFe'
+        ],
         '57' => [
             'CteRecepcao',
             'CteRetRecepcao',
@@ -120,7 +124,7 @@ class Dfe
                 'AN' => 'AN',
                 'AP' => 'SVRS',
                 'BA' => 'BA',
-                'CE' => 'CE',
+                'CE' => 'SVRS',
                 'DF' => 'SVRS',
                 'ES' => 'SVRS',
                 'GO' => 'GO',
@@ -128,10 +132,10 @@ class Dfe
                 'MG' => 'MG',
                 'MS' => 'MS',
                 'MT' => 'MT',
-                'PA' => 'SVAN',
+                'PA' => 'SVRS',
                 'PB' => 'SVRS',
                 'PE' => 'PE',
-                'PI' => 'SVAN',
+                'PI' => 'SVRS',
                 'PR' => 'PR',
                 'RJ' => 'SVRS',
                 'RN' => 'SVRS',
@@ -627,20 +631,37 @@ class Dfe
             'version',
             'saveFiles',
             'xUF',
-            'xUFAut',
+            // 'xUFAut',
             'tpAmb',
             'CNPJ'
         ]), $config);
+        /**
+         * If some required field is missing
+         */
         if (! empty($missing)) {
             throw new \Exception("You must provide all required fields in configuration. This fields are missing: " . implode(', ', array_flip($missing)));
-        } else if (isset($config['date']) && ! Variable::date()->validate($config['date'])) {
+        } /**
+         * If there is a field 'date' check if it has a valid value
+         */
+        else if (isset($config['date']) && ! Variable::date()->validate($config['date'])) {
             throw new \Exception("Date '{$config['date']}' is not a valid date in format YYY-MM-DD.");
-        } else if (isset($config['schemaPath']) && (! file_exists($config['schemaPath']) || //
+        } /**
+         * Check if there is sme service available for document model
+         */
+        else if (! isset($this->servicesAvailable[$config['mod']]) || empty($this->servicesAvailable[$config['mod']])) {
+            throw new \Exception("There is no services available for document model {$config['mod']}");
+        } /**
+         * Check if schema path is valid
+         */
+        else if (isset($config['schemaPath']) && (! file_exists($config['schemaPath']) || //
         ! is_dir($config['schemaPath']) || //
         ! is_readable($config['schemaPath']))) {
             throw new \Exception("Schema path '{$config['schemaPath']}' is not valid.");
         }
-
+        /**
+         * Clear information about authorizing webservice 
+         */
+        $this->xUFAut = null;
         /**
          * Set values to class attributes
          */

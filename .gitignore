@@ -4,3 +4,7 @@
 /.buildpath
 /.project
 /composer.phar
+/tests/certs/cert.pfx
+/tests/certs/cert_certKEY.pem
+/tests/certs/cert_priKEY.pem
+/tests/certs/cert_pubKEY.pem

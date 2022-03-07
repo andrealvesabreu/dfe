@@ -182,6 +182,16 @@ class ParserResponse
     }
 
     /**
+     *
+     * @param string $code
+     * @return number[]|string[]
+     */
+    public static function getResponseCode(string $code): ?array
+    {
+        return self::$messages[$code];
+    }
+
+    /**
      * Response codes and messages.
      * Group messages by status type
      *

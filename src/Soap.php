@@ -4,6 +4,7 @@ namespace Inspire\Dfe;
 
 use Inspire\Support\Xml\Xml;
 use Inspire\Support\Message\System\SystemMessage;
+use Inspire\Support\Xml\Array2XML;
 
 /**
  * Description of Soap
@@ -87,17 +88,19 @@ class Soap
                 'style' => SOAP_DOCUMENT,
                 'use' => SOAP_LITERAL,
                 'local_cert' => $this->cert->getCertKeyFile(),
+                'keep_alive' => false,
                 'trace' => true,
                 'compression' => 0,
                 'exceptions' => true,
                 'cache_wsdl' => WSDL_CACHE_NONE,
-                "stream_context" => stream_context_create([
-                    "ssl" => [
+                'stream_context' => stream_context_create([
+                    'ssl' => [
                         'verify_peer' => false,
                         'verify_peer_name' => false,
                         'allow_self_signed' => true,
                         'local_cert' => $this->cert->getCertKeyFile(),
-                        'local_pk' => $this->cert->getPriKeyFile()
+                        'local_pk' => $this->cert->getPriKeyFile(),
+                        'ciphers' => 'DEFAULT:!DH'
                     ]
                 ])
             ];
@@ -137,8 +140,54 @@ class Soap
                 $resp = $request->__soapCall($this->method, [
                     $body
                 ]);
-                $res = $this->method . 'Result';
-                return new SystemMessage($resp->any ?? $resp->{$res}->any, // Message
+
+                $respXML = null;
+                /**
+                 * If webservice response contains a generic field 'any' with a string XML
+                 */
+                if (property_exists($resp, 'any')) {
+                    $respXML = $resp->any;
+                } else {
+                    /**
+                     * Check if reponse contains a propert called {$this->method}Result
+                     */
+                    $res = $this->method . 'Result';
+                    if (property_exists($resp, $res)) {
+                        /**
+                         * If {$this->method}Result contains a propert called 'any'
+                         */
+                        if (property_exists($resp->{$res}, 'any')) {
+                            $respXML = $resp->{$res}->any;
+                        } /**
+                         * If not, i will consider that its a stdClass response representation
+                         * Trying convert it to XML
+                         */
+                        else {
+                            $responseData = json_decode(json_encode($resp), true);
+                            if (is_array($responseData) && ! empty($responseData)) {
+                                $respXML = Xml::arrayToXml($responseData, null, true)->getXml();
+                            }
+                        }
+                    } /**
+                     * There is no a propert called {$this->method}Result
+                     * Consider that its a stdClass response representation
+                     * Trying convert it to XML
+                     */
+                    else {
+                        $responseData = json_decode(json_encode($resp), true);
+                        if (is_array($responseData) && ! empty($responseData)) {
+                            $respXML = Xml::arrayToXml($responseData, null, true)->getXml();
+                        }
+                    }
+                }
+
+                if (empty($respXML)) {
+                    return new SystemMessage('Service unavailable', // Message
+                    '231', // System code
+                    SystemMessage::MSG_ERROR, // System status code
+                    false); // System status
+                }
+                return new SystemMessage($respXML, // Message
                 '1', // System code
                 SystemMessage::MSG_OK, // System status code
                 true); // System status

@@ -2,13 +2,13 @@
 declare(strict_types = 1);
 namespace Inspire\Dfe;
 
-use Inspire\Support\Message\System\SystemMessage;
-use Inspire\Support\Xml\Xml;
 use Inspire\Validator\ {
     Variable,
     XsdSchema
 };
 use Inspire\Dfe\Cte\ParserResponse;
+use Inspire\Support\Message\System\SystemMessage;
+use Inspire\Support\Xml\Xml;
 use Inspire\Support\ {
     Arrays,
     Strings
