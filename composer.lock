@@ -510,7 +510,7 @@
         },
         {
             "name": "illuminate/collections",
-            "version": "v8.83.3",
+            "version": "v8.83.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/collections.git",
@@ -564,7 +564,7 @@
         },
         {
             "name": "illuminate/contracts",
-            "version": "v8.83.3",
+            "version": "v8.83.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/contracts.git",
@@ -612,7 +612,7 @@
         },
         {
             "name": "illuminate/macroable",
-            "version": "v8.83.3",
+            "version": "v8.83.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/macroable.git",
@@ -658,7 +658,7 @@
         },
         {
             "name": "illuminate/support",
-            "version": "v8.83.3",
+            "version": "v8.83.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/support.git",
@@ -820,12 +820,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/andrealvesabreu/support.git",
-                "reference": "d15ab0e601854f169b8fb09ef34765fe9d96ecfd"
+                "reference": "54f71e601104f05668f176a0c88aa063f9a60e5b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/andrealvesabreu/support/zipball/d15ab0e601854f169b8fb09ef34765fe9d96ecfd",
-                "reference": "d15ab0e601854f169b8fb09ef34765fe9d96ecfd",
+                "url": "https://api.github.com/repos/andrealvesabreu/support/zipball/54f71e601104f05668f176a0c88aa063f9a60e5b",
+                "reference": "54f71e601104f05668f176a0c88aa063f9a60e5b",
                 "shasum": ""
             },
             "require": {
@@ -849,7 +849,7 @@
                 "issues": "https://github.com/andrealvesabreu/support/issues",
                 "source": "https://github.com/andrealvesabreu/support/tree/0.1.0"
             },
-            "time": "2022-03-06T03:55:28+00:00"
+            "time": "2022-03-14T04:38:19+00:00"
         },
         {
             "name": "inspire/validator",

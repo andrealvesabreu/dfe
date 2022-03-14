@@ -18,6 +18,7 @@ class ParserResponse
 
     /**
      * Parse SEFAZ response of CteRecepcao
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
@@ -29,46 +30,95 @@ class ParserResponse
             '@attributes',
             'protCTe.@attributes'
         ]);
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
         return $aData;
     }
 
     /**
      * Parse SEFAZ response of CteRecepcaoOS
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
      */
     public static function CteRecepcaoOS(Xml $xml): array
     {
-        $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retEnviCte');
+        $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retEnviOS');
         Arrays::forget($aData, [
             '@attributes',
             'protCTe.@attributes'
         ]);
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
         return $aData;
     }
 
     /**
      * Parse SEFAZ response of CteRetRecepcao
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
      */
     public static function CteRetRecepcao(Xml $xml): array
     {
+        /**
+         * Arrays to easy parser
+         *
+         * $aData array
+         */
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retConsReciCTe');
+        /**
+         * XML to get real protocol, if available
+         */
+        $parserProt = new Xml($xml->getXml(), true);
+        /**
+         * Forgetting all @attributes
+         */
         Arrays::forget($aData, [
-            '@attributes',
-            'protCTe.@attributes'
+            '@attributes'
         ]);
         if (isset($aData['protCTe'][0])) {
             foreach ($aData['protCTe'] as &$ct) {
-                unset($ct['@attributes']);
+                Arrays::set($ct, 'versao', Arrays::get($ct, '@attributes.versao'));
+                Arrays::forget($ct, [
+                    '@attributes',
+                    'infProt.@attributes'
+                ]);
             }
         } else {
-            $aData['protCTe'][0] = $aData['protCTe'];
-            unset($aData['protCTe']['infProt']);
+            Arrays::set($aData['protCTe'], 'versao', Arrays::get($aData, 'protCTe.@attributes.versao'));
+            Arrays::forget($aData, [
+                'protCTe.@attributes',
+                'protCTe.infProt.@attributes'
+            ]);
+            $aData['protCTe'] = [
+                $aData['protCTe']
+            ];
         }
+        /**
+         * Remapping array for CTe keys (protCTe.[chCTe].infProt)
+         */
+        foreach ($aData['protCTe'] as $i => $prot) {
+            Arrays::forget($aData['protCTe'], $i);
+            $prot['xml'] = $parserProt->xpathXml('/protCTe', $i)->asXML();
+            Arrays::set($aData['protCTe'], Arrays::get($prot, 'infProt.chCTe'), $prot);
+        }
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
         return $aData;
     }
 
@@ -81,9 +131,17 @@ class ParserResponse
     public static function CteInutilizacao(Xml $xml): array
     {
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retInutCTe');
+        Arrays::set($aData['infInut'], 'versao', Arrays::get($aData, '@attributes.versao'));
         Arrays::forget($aData, [
-            '@attributes'
+            '@attributes',
+            'infInut.@attributes'
         ]);
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['infInut']['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
         return $aData;
     }
 
@@ -247,14 +305,18 @@ class ParserResponse
     /**
      * Response codes and messages.
      * Group messages by status type
-     *
-     * 0 - Error on message sent. Fix package before resending
-     * 1 - OK
-     * 2 - Wait before try again
-     * 3 - Temporary error on service
-     * 4 - Permanent error on service
-     * 5 - Permanent error with carrier registration
-     *
+     */
+    private static array $messageType = [
+        0 => 'Error on message sent. Fix package before resending',
+        1 => 'OK',
+        2 => 'Wait before try again',
+        3 => 'Temporary error on service',
+        4 => 'Permanent error on service',
+        5 => 'Permanent error with carrier registration',
+        6 => 'Certificate error'
+    ];
+
+    /*
      * @var array
      */
     private static array $messages = [
@@ -290,15 +352,15 @@ class ParserResponse
             'type' => 1,
             'message' => 'Serviço em Operação'
         ],
-        '108' => [
+        '108' => [ // Verified
             'type' => 3,
             'message' => 'Serviço Paralisado Momentaneamente (curto prazo)'
         ],
-        '109' => [
+        '109' => [ // Verified
             'type' => 4,
             'message' => 'Serviço Paralisado sem Previsão'
         ],
-        '110' => [
+        '110' => [ // Verified
             'type' => 4,
             'message' => 'Uso Denegado'
         ],
@@ -330,7 +392,7 @@ class ParserResponse
             'type' => 3,
             'message' => 'Evento registrado, mas não vinculado a CT-e'
         ],
-        '201' => [
+        '201' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: O número máximo de numeração de CT-e a inutilizar ultrapassou o limite'
         ],
@@ -338,7 +400,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Falha no reconhecimento da autoria ou integridade do arquivo digital'
         ],
-        '203' => [
+        '203' => [ // Verified
             'type' => 5,
             'message' => 'Rejeição: Emissor não habilitado para emissão do CT-e'
         ],
@@ -378,15 +440,15 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Data de emissão CT-e posterior a data de recebimento'
         ],
-        '213' => [
+        '213' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: CNPJ-Base do Emitente difere do CNPJ-Base do Certificado Digital'
         ],
-        '214' => [
+        '214' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Tamanho da mensagem excedeu o limite estabelecido'
         ],
-        '215' => [
+        '215' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Falha no schema XML'
         ],
@@ -422,7 +484,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: CNPJ do transmissor do lote difere do CNPJ do transmissor da consulta'
         ],
-        '224' => [
+        '224' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: A faixa inicial é maior que a faixa final'
         ],
@@ -434,7 +496,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Código da UF do Emitente diverge da UF autorizadora'
         ],
-        '227' => [
+        '227' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Erro na composição do Campo ID'
         ],
@@ -474,27 +536,27 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: CPF do destinatário inválido'
         ],
-        '238' => [
+        '238' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Cabeçalho - Versão do arquivo XML superior a Versão vigente'
         ],
-        '239' => [
+        '239' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Cabeçalho - Versão do arquivo XML não suportada'
         ],
-        '240' => [
+        '240' => [ // Verified
             'type' => 5,
             'message' => 'Rejeição: Cancelamento/Inutilização - Irregularidade Fiscal do Emitente'
         ],
-        '241' => [
+        '241' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Um número da faixa já foi utilizado'
         ],
-        '242' => [
+        '242' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Elemento cteCabecMsg inexistente no SOAP Header'
         ],
-        '243' => [
+        '243' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: XML Mal Formado'
         ],
@@ -510,11 +572,11 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: UF do Recibo diverge da UF autorizadora'
         ],
-        '249' => [
+        '249' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: UF da Chave de Acesso diverge da UF autorizadora'
         ],
-        '250' => [
+        '250' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: UF diverge da UF autorizadora'
         ],
@@ -522,7 +584,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: UF/Município destinatário não pertence a SUFRAMA'
         ],
-        '252' => [
+        '252' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Ambiente informado diverge do Ambiente de recebimento'
         ],
@@ -530,7 +592,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Dígito Verificador da chave de acesso composta inválido'
         ],
-        '256' => [
+        '256' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Um número de CT-e da faixa está inutilizado na Base de dados da SEFAZ'
         ],
@@ -586,71 +648,71 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: CNPJ Emitente do CT-e Complementar difere do CNPJ do CT complementado'
         ],
-        '280' => [
-            'type' => 0,
+        '280' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor inválido'
         ],
-        '281' => [
-            'type' => 0,
+        '281' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor Data Validade'
         ],
-        '282' => [
-            'type' => 0,
+        '282' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor sem CNPJ'
         ],
-        '283' => [
-            'type' => 0,
+        '283' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor - erro Cadeia de Certificação'
         ],
-        '284' => [
-            'type' => 0,
+        '284' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor revogado'
         ],
-        '285' => [
-            'type' => 0,
+        '285' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor difere ICP-Brasil'
         ],
-        '286' => [
-            'type' => 0,
+        '286' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor erro no acesso a LCR'
         ],
         '289' => [
             'type' => 0,
             'message' => 'Rejeição: Código da UF informada diverge da UF solicitada'
         ],
-        '290' => [
-            'type' => 0,
+        '290' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Assinatura inválido'
         ],
-        '291' => [
-            'type' => 0,
+        '291' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Assinatura Data Validade'
         ],
-        '292' => [
-            'type' => 0,
+        '292' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Assinatura sem CNPJ'
         ],
-        '293' => [
-            'type' => 0,
+        '293' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Assinatura - erro Cadeia de Certificação'
         ],
-        '294' => [
-            'type' => 0,
+        '294' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Assinatura revogado'
         ],
-        '295' => [
-            'type' => 0,
+        '295' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Assinatura difere ICP-Brasil'
         ],
-        '296' => [
-            'type' => 0,
+        '296' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Assinatura erro no acesso a LCR'
         ],
-        '297' => [
+        '297' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Assinatura difere do calculado'
         ],
-        '298' => [
+        '298' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Assinatura difere do padrão do Projeto'
         ],
@@ -662,11 +724,11 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: CPF do remetente inválido'
         ],
-        '402' => [
+        '402' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: XML da área de dados com codificação diferente de UTF-8'
         ],
-        '404' => [
+        '404' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Uso de prefixo de namespace não permitido'
         ],
@@ -690,11 +752,11 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Campo cUF inexistente no elemento cteCabecMsg do SOAP Header'
         ],
-        '410' => [
+        '410' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: UF informada no campo cUF não é atendida pelo WebService'
         ],
-        '411' => [
+        '411' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Campo versaoDados inexistente no elemento cteCabecMsg do SOAP Header'
         ],
@@ -867,11 +929,11 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Destinatário deve ser informado para tipo de serviço diferente de redespacho intermediário ou serviço vinculado a multimodal'
         ],
-        '471' => [
+        '471' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Ano de inutilização não pode ser superior ao Ano atual'
         ],
-        '472' => [
+        '472' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Ano de inutilização não pode ser inferior a 2008'
         ],
@@ -1011,8 +1073,8 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: CT-e informado em SVC deve ser Normal'
         ],
-        '518' => [
-            'type' => 0,
+        '518' => [ // Verified
+            'type' => 4,
             'message' => 'Rejeição: Serviço indisponível na SVC'
         ],
         '519' => [
@@ -1323,11 +1385,11 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Chave de acesso inválida (número CT = 0)'
         ],
-        '598' => [
+        '598' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Usar somente o namespace padrao do CT-e'
         ],
-        '599' => [
+        '599' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Não é permitida a presença de caracteres de edição no início/fim da mensagem ou entre as tags da mensagem'
         ],
@@ -1563,7 +1625,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Segundo código de barras deve ser informado para CT-e emitido em contingência FS-DA'
         ],
-        '670' => [
+        '670' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Série utilizada não permitida no webservice'
         ],
@@ -1611,8 +1673,8 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Informação não pode ser alterada por carta de correção'
         ],
-        '682' => [
-            'type' => 0,
+        '682' => [ // Verified
+            'type' => 1,
             'message' => 'Rejeição: Já existe pedido de inutilização com a mesma faixa de inutilização [nProt:999999999999999]'
         ],
         '683' => [
@@ -1659,7 +1721,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: CT-e com emissão anterior ao evento prévio (EPEC)'
         ],
-        '696' => [
+        '696' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Existe EPEC aguardando CT-e nessa faixa de numeração'
         ],

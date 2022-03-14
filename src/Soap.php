@@ -14,6 +14,10 @@ use Inspire\Support\Xml\Array2XML;
 class Soap
 {
 
+    const SOAP_ERROR = '0';
+
+    const OK = '1';
+
     /**
      * Path to certificate in PEM format
      *
@@ -105,6 +109,7 @@ class Soap
                 ])
             ];
             $request = new \SoapClient("{$this->wsdl}?wsdl", $options);
+            $inputBody = $body->getXml();
             /**
              * Header
              */
@@ -140,7 +145,6 @@ class Soap
                 $resp = $request->__soapCall($this->method, [
                     $body
                 ]);
-
                 $respXML = null;
                 /**
                  * If webservice response contains a generic field 'any' with a string XML
@@ -149,7 +153,7 @@ class Soap
                     $respXML = $resp->any;
                 } else {
                     /**
-                     * Check if reponse contains a propert called {$this->method}Result
+                     * Check if response contains a property called {$this->method}Result
                      */
                     $res = $this->method . 'Result';
                     if (property_exists($resp, $res)) {
@@ -183,28 +187,53 @@ class Soap
 
                 if (empty($respXML)) {
                     return new SystemMessage('Service unavailable', // Message
-                    '231', // System code
+                    Soap::SOAP_ERROR, // System code
                     SystemMessage::MSG_ERROR, // System status code
                     false); // System status
                 }
-                return new SystemMessage($respXML, // Message
-                '1', // System code
+                /**
+                 * Construct a SystemMessage response
+                 *
+                 * @var \Inspire\Support\Message\System\SystemMessage $response
+                 */
+                $response = new SystemMessage('OK', // Message
+                Soap::OK, // System code
                 SystemMessage::MSG_OK, // System status code
-                true); // System status
+                true); // System status (success)
+                /**
+                 * Add all extra data to message
+                 */
+                $response->addExtra([
+                    'soap' => [
+                        'sent' => $request->__getLastRequest(),
+                        'received' => $request->__getLastResponse()
+                    ],
+                    'data' => [
+                        'sent' => $inputBody,
+                        'received' => $respXML
+                    ]
+                ]);
+                return $response;
             } catch (\Exception $ex) {
                 return new SystemMessage($ex->getMessage(), // Message
-                '231', // System code
+                Soap::SOAP_ERROR, // System code
                 SystemMessage::MSG_ERROR, // System status code
                 false); // System status
             }
         } catch (\SoapFault $ex) {
+            /**
+             * Soap exception
+             */
             return new SystemMessage($ex->getMessage(), // Message
-            '1', // System code
+            Soap::SOAP_ERROR, // System code
             SystemMessage::MSG_ERROR, // System status code
             false); // System status
         } catch (\Exception $ex) {
+            /**
+             * System exception
+             */
             return new SystemMessage($ex->getMessage(), // Message
-            '1', // System code
+            Soap::SOAP_ERROR, // System code
             SystemMessage::MSG_ERROR, // System status code
             false); // System status
         }

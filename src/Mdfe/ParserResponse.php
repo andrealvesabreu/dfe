@@ -3,7 +3,10 @@ declare(strict_types = 1);
 namespace Inspire\Dfe\Mdfe;
 
 use Inspire\Support\Xml\Xml;
-use Inspire\Support\Arrays;
+use Inspire\Support\ {
+    Arrays,
+    Strings
+};
 
 /**
  * Description of ParserResponse
@@ -14,17 +17,17 @@ class ParserResponse
 {
 
     /**
-     * Parse SEFAZ response of MDFeRecepcao
+     * Parse SEFAZ response of MDFeRecepcao OK
      *
      * @param Xml $xml
      * @return array
      */
     public static function MDFeRecepcao(Xml $xml): array
     {
+        var_dump($xml->getXml());
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retEnviMDFe');
         Arrays::forget($aData, [
-            '@attributes',
-            'protMDFe.@attributes'
+            '@attributes'
         ]);
         return $aData;
     }
@@ -46,7 +49,7 @@ class ParserResponse
     }
 
     /**
-     * Parse SEFAZ response of MDFeRetRecepcao
+     * Parse SEFAZ response of MDFeRetRecepcao OK
      *
      * @param Xml $xml
      * @return array
@@ -56,8 +59,20 @@ class ParserResponse
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retConsReciMDFe');
         Arrays::forget($aData, [
             '@attributes',
-            'protCTe.@attributes'
+            'protMDFe'
         ]);
+        Arrays::set($aData, 'aProt', []);
+        foreach ($xml->xml->xpath("//protMDFe") as $i => $prot) {
+            $chMDFe = $xml->xpathXml('/chMDFe', $i)->__toString();
+            $pr = Arrays::get(Xml::xmlToArray($prot->saveXML()), 'protMDFe.infProt');
+            Arrays::forget($pr, [
+                '@attributes'
+            ]);
+            Arrays::set($aData, "aProt.{$chMDFe}", [
+                'infProt' => $pr,
+                'protMDFe' => $prot->saveXML()
+            ]);
+        }
         return $aData;
     }
 
@@ -69,20 +84,20 @@ class ParserResponse
      */
     public static function MDFeConsulta(Xml $xml): array
     {
-        $xml->load($xml->getXml());
+        $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retConsSitMDFe');
         $parser = [
-            'versao' => $xml->xpath("/@versao", 0),
-            'tpAmb' => $xml->xpath("/tpAmb", 0),
-            'verAplic' => $xml->xpath("/verAplic", 0),
-            'cStat' => $xml->xpath("/cStat", 0),
-            'xMotivo' => $xml->xpath("/xMotivo", 0),
-            'cUF' => $xml->xpath("/cUF", 0),
-            'aProt' => []
+            'versao' => Arrays::get($aData, '@attributes.versao'),
+            'tpAmb' => Arrays::get($aData, 'tpAmb'),
+            'verAplic' => Arrays::get($aData, 'verAplic'),
+            'cStat' => Arrays::get($aData, 'cStat'),
+            'xMotivo' => Arrays::get($aData, 'xMotivo'),
+            'cUF' => Arrays::get($aData, 'cUF'),
+            'protMDFe' => null,
+            'protEventos' => null
         ];
-        $prot = $xml->xpath("/protMDFe");
+        $prot = Arrays::get($aData, 'protMDFe');
         if ($prot && is_array($prot)) {
-            $prot = $prot[0];
-            $parser['aProt'][Arrays::get($prot, 'infProt.chMDFe')] = [
+            $parser['protMDFe']['infProt'] = [
                 'versao' => Arrays::get($prot, '@attributes.versao'),
                 'tpAmb' => Arrays::get($prot, 'infProt.tpAmb'),
                 'verAplic' => Arrays::get($prot, 'infProt.verAplic'),
@@ -92,45 +107,22 @@ class ParserResponse
                 'digVal' => Arrays::get($prot, 'infProt.digVal'),
                 'cStat' => Arrays::get($prot, 'infProt.cStat'),
                 'xMotivo' => Arrays::get($prot, 'infProt.xMotivo'),
-                'xml' => $xml->xpathXml('/protMDFe', 0)->asXML()
+                'protMDFe' => $xml->xml->xpath("//protMDFe")[0]->saveXML()
             ];
         }
-        $prot = $xml->xpath("/retCancMDFe");
-        if ($prot && is_array($prot)) {
-            $prot = $prot[0];
-            $parser['retCancMDFe'] = [
-                'versao' => Arrays::get($prot, '@attributes.versao'),
-                'tpAmb' => Arrays::get($prot, 'infProt.tpAmb'),
-                'verAplic' => Arrays::get($prot, 'infProt.verAplic'),
-                'chMDFe' => Arrays::get($prot, 'infProt.chMDFe'),
-                'dhRecbto' => Arrays::get($prot, 'infProt.dhRecbto'),
-                'nProt' => Arrays::get($prot, 'infProt.nProt'),
-                'digVal' => Arrays::get($prot, 'infProt.digVal'),
-                'cStat' => Arrays::get($prot, 'infProt.cStat'),
-                'xMotivo' => Arrays::get($prot, 'infProt.xMotivo'),
-                'xml' => $xml->xpathXml('/retCancCTe', 0)->asXML()
-            ];
-        }
-        $protEventos = $xml->xpath("/procEventoMDFe");
-        if (! empty($protEventos)) {
-            $parser['procEventoMDFe'] = [];
-            foreach ($protEventos as $i => $prot) {
-                $prot = $prot['retEventoMDFe'];
-                array_push($parser['procEventoMDFe'], [
-                    'versao' => Arrays::get($prot, '@attributes.versao'),
-                    'tpAmb' => Arrays::get($prot, 'infEvento.tpAmb'),
-                    'verAplic' => Arrays::get($prot, 'infEvento.verAplic'),
-                    'cOrgao' => Arrays::get($prot, 'infEvento.cOrgao'),
-                    'cStat' => Arrays::get($prot, 'infEvento.cStat'),
-                    'xMotivo' => Arrays::get($prot, 'infEvento.xMotivo'),
-                    'chMDFe' => Arrays::get($prot, 'infEvento.chMDFe'),
-                    'tpEvento' => Arrays::get($prot, 'infEvento.tpEvento'),
-                    'xEvento' => Arrays::get($prot, 'infEvento.xEvento'),
-                    'nSeqEvento' => Arrays::get($prot, 'infEvento.nSeqEvento'),
-                    'dhRegEvento' => Arrays::get($prot, 'infEvento.dhRegEvento'),
-                    'nProt' => Arrays::get($prot, 'infEvento.nProt'),
-                    'xml' => $xml->xpathXml('/procEventoCTe', $i)->asXML()
+        $procEventoMDFe = Arrays::get($aData, 'procEventoMDFe');
+        if (! empty($procEventoMDFe)) {
+            $parser['protEventos'] = [];
+            foreach ($procEventoMDFe as $i => $prot) {
+                $retEventoMDFe = [
+                    'retEventoMDFe' => $prot['retEventoMDFe'],
+                    'procEventoMDFe' => $xml->xml->xpath("//procEventoMDFe")[$i]->saveXML()
+                ];
+                Arrays::forget($retEventoMDFe, [
+                    'retEventoMDFe.infEvento.@attributes',
+                    'retEventoMDFe.@attributes'
                 ]);
+                $parser['protEventos'][] = $retEventoMDFe;
             }
         }
         return $parser;
@@ -179,6 +171,50 @@ class ParserResponse
             '@attributes'
         ]);
         return $aData;
+    }
+
+    /**
+     * Parse response Distribuição documentos e informações de interesse do ator do MDF-e
+     *
+     * @param Xml $xml
+     * @return array
+     */
+    public static function MDFeDistribuicaoDFe(Xml $xml, array $unpack = null): array
+    {
+        /**
+         * Suggeted values for $unpack: ['procMDFe', 'procEventoMDFe']
+         */
+        $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retDistDFeInt');
+        var_dump($aData);
+        // $xml->load($xml->getXml());
+        $parsed = [
+            'versao' => Arrays::get($aData, '@attributes.versao'),
+            'tpAmb' => Arrays::get($aData, 'tpAmb'),
+            'verAplic' => Arrays::get($aData, 'verAplic'),
+            'cStat' => Arrays::get($aData, 'cStat'),
+            'xMotivo' => Arrays::get($aData, 'xMotivo'),
+            'dhResp' => Arrays::get($aData, 'dhResp'),
+            'ultNSU' => Strings::toInt(Arrays::get($aData, 'ultNSU')),
+            'maxNSU' => Strings::toInt(Arrays::get($aData, 'maxNSU')),
+            'aDocs' => []
+        ];
+        $docs = Arrays::get($aData, 'loteDistDFeInt.docZip');
+        if ($unpack !== null) {
+            $unpack = array_flip($unpack);
+        }
+        if ($docs !== null) {
+            foreach ($docs as $doc) {
+                $schema = strtok(Arrays::get($doc, '@attributes.schema'), '_');
+                $parsed['aDocs'][] = [
+                    'NSU' => Strings::toInt(Arrays::get($doc, '@attributes.NSU')),
+                    'schema' => $schema,
+                    'xml' => ($unpack !== null && Arrays::keyCheck($schema, $unpack)) || // Some type of package is set and actual package is one of that
+                    $unpack === null ? // No restriction of type is set
+                    gzdecode(base64_decode($doc[0])) : null
+                ];
+            }
+        }
+        return $parsed;
     }
 
     /**

@@ -156,7 +156,7 @@ class Mdfe extends Dfe
     public function MDFeConsNaoEnc(string $doc): SystemMessage
     {
         if ((strlen($doc) != 11 && strlen($doc) != 14) || // Length validation
-        (strlen($doc) == 11 && ! Variable::cpf())->validate($doc) || // CPF validation
+        (strlen($doc) == 11 && ! Variable::cpf()->validate($doc)) || // CPF validation
         (strlen($doc) == 14 && ! Variable::cnpj()->validate($doc))) // CNPJ validation
         {
             return new SystemMessage("Invalid CPF/CNPJ: {$doc}", // Message
@@ -249,6 +249,37 @@ class Mdfe extends Dfe
         }
         return $response;
     }
+    
+    /**
+     * Distribution of documents and information of interest to the MDF-e actor
+     *
+     * @param int $nsu
+     * @return SystemMessage
+     */
+    public function MDFeDistribuicaoDFe(int $nsu): SystemMessage
+    {
+        $initialize = $this->prepare(__FUNCTION__);
+        if (! $initialize->isOk()) {
+            return $initialize;
+        }
+        $body = [
+            'distDFeInt' => [
+                '@attributes' => [
+                    'xmlns' => $this->urlPortal,
+                    'versao' => $this->urlVersion
+                ],
+                'tpAmb' => $this->tpAmb,
+                'CNPJ' => $this->CNPJ,
+                'distNSU' => [
+                    'ultNSU' => str_pad((string) $nsu, 15, '0', STR_PAD_LEFT)
+                ]
+            ]
+        ];
+        $body = Xml::arrayToXml($body, null, true);
+        var_dump($body);
+        exit;
+        return $this->send($body, true);
+    }
 
     /**
      * Cancellation event
@@ -334,36 +365,6 @@ class Mdfe extends Dfe
         ];
         $xmlEvent = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
         return $this->send($xmlEvent);
-    }
-
-    /**
-     * Distribution of documents and information of interest to the CT-e actor
-     *
-     * @param int $nsu
-     * @return SystemMessage
-     */
-    public function CTeDistribuicaoDFe(int $nsu): SystemMessage
-    {
-        $initialize = $this->prepare(__FUNCTION__);
-        if (! $initialize->isOk()) {
-            return $initialize;
-        }
-        $body = [
-            'distDFeInt' => [
-                '@attributes' => [
-                    'xmlns' => $this->urlPortal,
-                    'versao' => $this->urlVersion
-                ],
-                'tpAmb' => $this->tpAmb,
-                'cUFAutor' => $this->cUF,
-                'CNPJ' => $this->CNPJ,
-                'distNSU' => [
-                    'ultNSU' => str_pad((string) $nsu, 15, '0', STR_PAD_LEFT)
-                ]
-            ]
-        ];
-        $body = Xml::arrayToXml($body, null, true);
-        return $this->send($body, true);
     }
 
     /**

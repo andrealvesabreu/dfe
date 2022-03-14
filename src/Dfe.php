@@ -25,17 +25,76 @@ class Dfe
      * @var array
      */
     protected array $eventCode = [
-        '110110' => 'Carta de Correcao',
-        '110111' => 'Cancelamento',
-        '110112' => 'Encerramento',
-        '110113' => 'EPEC', // Event intended to meet requests for issuance in CT-e contingency.
-        '110114' => 'Inclusão de Condutor', // Event destined to the inclusion of driver
-        '110115' => 'Inclusão de DF-e',
-        '110160' => 'Registro Multimodal', // Event designed to link information on services provided to CT-e multimodal. Note that, if a CT-e is issued that is already linked to the multimodal CT-e, it is not necessary to inform it for this event.
-        '110170' => 'Informações da GTV', // Event so that the CT-e OS issuer of the Transport of Values ​​type of service can inform the GTV related to the provision of the service
-        '110180' => 'Comprovante de Entrega do CT-e', // Proof of delivery event
-        '110181' => 'Cancelamento do Comprovante de Entrega do CT-e', // Proof of delivery cancellation event
-        '610110' => 'Prestação do Serviço em Desacordo'
+        '110110' => [ // Document correction event
+            'schema' => [
+                '57' => 'evCCeCTe',
+                '67' => 'evCCeCTe'
+            ],
+            'desc' => 'Carta de Correcao'
+        ],
+        '110111' => [ // Document cancellation event
+            'schema' => [
+                '57' => 'evCancCTe',
+                '67' => 'evCancCTe',
+                '58' => 'evCancMDFe'
+            ],
+            'desc' => 'Cancelamento'
+        ],
+        '110112' => [
+            'schema' => [
+                '58' => 'evEncMDFe'
+            ],
+            'desc' => 'Encerramento'
+        ],
+        '110113' => [ // Event intended to meet requests for issuance in CT-e contingency.
+            'schema' => [
+                '57' => 'evEPECCTe'
+            ],
+            'desc' => 'EPEC'
+        ],
+        '110114' => [
+            'schema' => [
+                '58' => 'evIncCondutorMDFe'
+            ],
+            'desc' => 'Inclusão de Condutor'
+        ], // Event destined to the inclusion of driver
+        '110115' => [
+            'schema' => [
+                '58' => 'evInclusaoDFeMDFe'
+            ],
+            'desc' => 'Inclusão de DF-e'
+        ],
+        '110160' => [ // Event designed to link information on services provided to CT-e multimodal. Note that, if a CT-e is issued that is already linked to the multimodal CT-e, it is not necessary to inform it for this event.
+            'schema' => [
+                '57' => 'evRegMultimodal'
+            ],
+            'desc' => 'Registro Multimodal'
+        ],
+        '110170' => [ // Event so that the CT-e OS issuer of the Transport of Values ​​type of service can inform the GTV related to the provision of the service
+            'schema' => [
+                '67' => 'evGTV'
+            ],
+            'desc' => 'Informações da GTV'
+        ],
+        '110180' => [ // Proof of delivery event
+            'schema' => [
+                '57' => 'evCECTe'
+            ],
+            'desc' => 'Comprovante de Entrega do CT-e'
+        ],
+        '110181' => [ // Proof of delivery cancellation event
+            'schema' => [
+                '57' => 'evCancCECTe'
+            ],
+            'desc' => 'Cancelamento do Comprovante de Entrega do CT-e'
+        ],
+        '610110' => [
+            'schema' => [
+                '57' => 'evPrestDesacordo',
+                '67' => 'evPrestDesacordo'
+            ],
+            'desc' => 'Prestação do Serviço em Desacordo'
+        ]
     ];
 
     /**
@@ -659,7 +718,7 @@ class Dfe
             throw new \Exception("Schema path '{$config['schemaPath']}' is not valid.");
         }
         /**
-         * Clear information about authorizing webservice 
+         * Clear information about authorizing webservice
          */
         $this->xUFAut = null;
         /**
@@ -826,13 +885,17 @@ class Dfe
          * @var \Inspire\Support\Message\System\SystemMessage $result
          */
         $result = $soap->send($this->getHeader(), $body, $addMethod);
-        $result->setExtra([
-            'paths' => $paths
-        ]);
         /**
          * If there is no problem to connect server
          */
         if ($result->isOk()) {
+            /**
+             * If it's all ok till then, add paths to save files
+             * Set paths to save files
+             */
+            $result->addExtra([
+                'paths' => $paths
+            ]);
             /**
              * Process response with ParserResponse
              *
@@ -841,10 +904,12 @@ class Dfe
             $parsed = call_user_func([
                 $parser,
                 $this->urlService
-            ], new Xml($result->__toString()));
+            ], new Xml($result->getExtra('data.received'), true));
+            /**
+             * Add parsed data to response/result
+             */
             $result->addExtra([
-                'parse' => $parsed,
-                'xml' => $result->__toString()
+                'parse' => $parsed
             ]);
         }
         return $result;
@@ -873,33 +938,39 @@ class Dfe
         }
         $saveDocument = false;
         switch ($this->urlService) {
+            /**
+             * Events webservices
+             */
             case 'CteRecepcaoEvento':
-            case 'MDFeRecepcaoEvento':
+                // case 'MDFeRecepcaoEvento':
                 $match = [];
                 if (preg_match('/tpEvento>(.*?)<\/tpEvento/', $xml->getXml(), $match) == 1) {
-                    switch ($match[1]) {
-                        case '110110':
-                            $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.event.evcce");
-                            break;
-                        case '110111':
-                            $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.event.cancel");
-                            break;
-                        case '110180':
-                            $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.event.evce");
-                            break;
-                        case '110181':
-                            $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.event.evcancce");
-                            break;
-                        default:
-                            throw new \Exception("Invalid event type for {$this->xMod}: {$match[1]}");
+                    if (isset($this->eventCode[$match[1]])) {
+                        switch ($this->mod) {
+                            case 57:
+                            case 67:
+                                $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.CteRecepcaoEvento.{$this->eventCode[$match[1]]}");
+                                break;
+                            case 58:
+                                $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.MdfeRecepcaoEvento.{$this->eventCode[$match[1]]}");
+                                break;
+                        }
+                    } else {
+                        throw new \Exception("Invalid event type for {$this->xMod}: {$match[1]}");
+                    }
+                    if ($resp['response'] === null) {
+                        throw new \Exception("Invalid configuration to store event type {$this->eventCode[$match[1]]} for {$this->xMod}");
                     }
                     $saveDocument = true;
                 }
                 break;
+            /**
+             * Emission webservices
+             */
             case 'CteRecepcao':
-            case 'CteRecepcaoOS':
-            case 'MDFeRecepcao':
-            case 'MDFeRecepcaoSinc':
+                // case 'CteRecepcaoOS':
+                // case 'MDFeRecepcao':
+                // case 'MDFeRecepcaoSinc':
                 $resp = [
                     'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
                     'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response"),
@@ -907,8 +978,19 @@ class Dfe
                 ];
                 $saveDocument = true;
                 break;
+            case 'CteInutilizacao':
+                $resp = [
+                    'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
+                    'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response"),
+                    'document' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.document")
+                ];
+                $saveDocument = true;
+                break;
+            /**
+             * Document status webservice
+             */
             case 'CteRetRecepcao':
-            case 'MDFeRetRecepcao':
+                // case 'MDFeRetRecepcao':
                 $resp = [
                     'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
                     'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response"),
@@ -917,6 +999,9 @@ class Dfe
                 ];
                 $saveDocument = true;
                 break;
+            /**
+             * Another webservices
+             */
             default:
                 $resp = [
                     'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
@@ -924,13 +1009,23 @@ class Dfe
                 ];
                 break;
         }
-        if (! isset($resp['request']) || empty($resp['request']) || ! preg_match('/^(\.\.\/(?:\.\.\/)*)?(?!.*?\/\/)(?!(?:.*\/)?\.+(?:\/|$)).+$/', $resp['request'], $match) > 0) {
+        if (! isset($resp['request']) || empty($resp['request']) || // Not set or empty request path
+        ! preg_match('/^(\.\.\/(?:\.\.\/)*)?(?!.*?\/\/)(?!(?:.*\/)?\.+(?:\/|$)).+$/', $resp['request'], $match) > 0) // invalid path
+        {
             throw new \Exception("You must provide a valid request file path when Save mode is enabled.");
-        } else if (! isset($resp['response']) || empty($resp['response']) || ! preg_match('/^(\.\.\/(?:\.\.\/)*)?(?!.*?\/\/)(?!(?:.*\/)?\.+(?:\/|$)).+$/', $resp['response'], $match) > 0) {
-            throw new \Exception("You must provide a valid request file path when Save mode is enabled.");
-        } else if ($saveDocument && (! isset($resp['document']) || empty($resp['document']) || ! preg_match('/^(\.\.\/(?:\.\.\/)*)?(?!.*?\/\/)(?!(?:.*\/)?\.+(?:\/|$)).+$/', $resp['document'], $match) > 0)) {
-            throw new \Exception("You must provide a valid request file path when Save mode is enabled.");
+        } else if (! isset($resp['response']) || empty($resp['response']) || // Not set or empty response path
+        ! preg_match('/^(\.\.\/(?:\.\.\/)*)?(?!.*?\/\/)(?!(?:.*\/)?\.+(?:\/|$)).+$/', $resp['response'], $match) > 0) // invalid path
+        {
+            throw new \Exception("You must provide a valid reponse file path when Save mode is enabled.");
+        } else if ($saveDocument && // Save document. Services where a document is generated
+        (! isset($resp['document']) || empty($resp['document']) || // Not set or empty response path
+        ! preg_match('/^(\.\.\/(?:\.\.\/)*)?(?!.*?\/\/)(?!(?:.*\/)?\.+(?:\/|$)).+$/', $resp['document'], $match) > 0 // invalid path
+        )) {
+            throw new \Exception("You must provide a valid document file path when Save mode is enabled.");
         }
+        /**
+         * Normalize path, replacing known variables
+         */
         foreach ($resp as &$folder) {
             $folder = str_replace([
                 ':DOC',
@@ -945,6 +1040,9 @@ class Dfe
                 strtok('-'),
                 strtok('-')
             ], $folder);
+            /**
+             * Try create folder if not exists
+             */
             if (! file_exists($folder) && ! mkdir($folder, 0755, true)) {
                 throw new \Exception("Directory {$folder} does not exists and was not possible to create it.");
             }

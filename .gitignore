@@ -8,3 +8,9 @@
 /tests/certs/cert_certKEY.pem
 /tests/certs/cert_priKEY.pem
 /tests/certs/cert_pubKEY.pem
+/tests/certs/cert_.pfx
+/tests/certs/cert_certKEY_.pem
+/tests/certs/cert_priKEY_.pem
+/tests/certs/cert_pubKEY_.pem
+/tests/cte_parser.php
+/tests/mdfe_parser.php
