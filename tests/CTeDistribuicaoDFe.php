@@ -5,26 +5,26 @@ use Inspire\Dfe\Certificate;
 use Inspire\Config\Config;
 use Inspire\Validator\Variable;
 use Inspire\Dfe\Cte\ParserResponse;
-use Inspire\Validator\XsdSchema;
 use Inspire\Support\Xml\Xml;
 
 /**
- * Invalidate CT -e numbering
+ * Distributes documents and information of interest to the CT-e actor configuration and sent
  */
 try {
     $cte = new Cte([
         'mod' => '57',
-        'version' => '3.00',
+        'version' => '1.00',
         'saveFiles' => true,
         'xUF' => 'RS',
-        'tpAmb' => 2,
+        'tpAmb' => 1,
         'CNPJ' => $CNPJ,
-        'schemaPath' => ROOT_DIR . '/tests/schemas/CTe3.00a'
+        'xUFAut' => 'AN',
+        'schemaPath' => ROOT_DIR . '/tests/schemas/CTeDistDFe_100'
         // Optionals
-        // 'date' => '2021-02-28',
-        // 'UF' => '43'
+        // 'date' => '2021-02-28'
+        // 'UF' => '43',
     ], $cert);
-    $send = $cte->CteInutilizacao(999, 999999996, 999999996, 'Test Invalidate CT -e numbering');
+    $send = $cte->CTeDistribuicaoDFe(1000100);
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {

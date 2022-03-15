@@ -147,74 +147,107 @@ class ParserResponse
 
     /**
      * Parse SEFAZ response of CteConsulta
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
      */
     public static function CteConsulta(Xml $xml): array
     {
-        $xml->load($xml->getXml());
-        $parser = [
-            'versao' => $xml->xpath("/@versao", 0),
-            'tpAmb' => $xml->xpath("/tpAmb", 0),
-            'verAplic' => $xml->xpath("/verAplic", 0),
-            'cStat' => $xml->xpath("/cStat", 0),
-            'xMotivo' => $xml->xpath("/xMotivo", 0),
-            'cUF' => $xml->xpath("/cUF", 0),
-            'aProt' => []
-        ];
-        $prot = $xml->xpath("/protCTe");
-        if ($prot && is_array($prot)) {
-            $prot = $prot[0];
-            $parser['aProt'][Arrays::get($prot, 'infProt.chCTe')] = [
-                'versao' => Arrays::get($prot, '@attributes.versao'),
-                'tpAmb' => Arrays::get($prot, 'infProt.tpAmb'),
-                'verAplic' => Arrays::get($prot, 'infProt.verAplic'),
-                'chCTe' => Arrays::get($prot, 'infProt.chCTe'),
-                'dhRecbto' => Arrays::get($prot, 'infProt.dhRecbto'),
-                'nProt' => Arrays::get($prot, 'infProt.nProt'),
-                'digVal' => Arrays::get($prot, 'infProt.digVal'),
-                'cStat' => Arrays::get($prot, 'infProt.cStat'),
-                'xMotivo' => Arrays::get($prot, 'infProt.xMotivo'),
-                'xml' => $xml->xpathXml('/protCTe', 0)->asXML()
+        /**
+         * Arrays to easy parser
+         *
+         * $aData array
+         */
+        $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retConsSitCTe');
+        /**
+         * Forgetting all @attributes
+         */
+        Arrays::forget($aData, [
+            '@attributes'
+        ]);
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
+        /**
+         * If there is a CTe
+         */
+        if (true) {
+            /**
+             * XML to get all XML (protocol and events)
+             */
+            $parserProt = new Xml($xml->getXml(), true);
+            $parser = [
+                'versao' => $aData['@attributes']['versao'],
+                'tpAmb' => $aData['tpAmb'],
+                'verAplic' => $aData['verAplic'],
+                'cStat' => $aData['cStat'],
+                'xMotivo' => $aData['xMotivo'],
+                'cUF' => $aData['cUF'],
+                'protCTe' => []
             ];
-        }
-        $prot = $xml->xpath("/retCancCTe");
-        if ($prot && is_array($prot)) {
-            $prot = $prot[0];
-            $parser['retCancCTe'] = [
-                'versao' => Arrays::get($prot, '@attributes.versao'),
-                'tpAmb' => Arrays::get($prot, 'infProt.tpAmb'),
-                'verAplic' => Arrays::get($prot, 'infProt.verAplic'),
-                'chCTe' => Arrays::get($prot, 'infProt.chCTe'),
-                'dhRecbto' => Arrays::get($prot, 'infProt.dhRecbto'),
-                'nProt' => Arrays::get($prot, 'infProt.nProt'),
-                'digVal' => Arrays::get($prot, 'infProt.digVal'),
-                'cStat' => Arrays::get($prot, 'infProt.cStat'),
-                'xMotivo' => Arrays::get($prot, 'infProt.xMotivo'),
-                'xml' => $xml->xpathXml('/retCancCTe', 0)->asXML()
-            ];
-        }
-        $protEventos = $xml->xpath("/procEventoCTe");
-        if (! empty($protEventos)) {
-            $parser['procEventoCTe'] = [];
-            foreach ($protEventos as $i => $prot) {
-                $prot = $prot['retEventoCTe'];
-                $parser['procEventoCTe'][] = [
-                    'versao' => Arrays::get($prot, '@attributes.versao'),
-                    'tpAmb' => Arrays::get($prot, 'infEvento.tpAmb'),
-                    'verAplic' => Arrays::get($prot, 'infEvento.verAplic'),
-                    'cOrgao' => Arrays::get($prot, 'infEvento.cOrgao'),
-                    'cStat' => Arrays::get($prot, 'infEvento.cStat'),
-                    'xMotivo' => Arrays::get($prot, 'infEvento.xMotivo'),
-                    'chCTe' => Arrays::get($prot, 'infEvento.chCTe'),
-                    'tpEvento' => Arrays::get($prot, 'infEvento.tpEvento'),
-                    'xEvento' => Arrays::get($prot, 'infEvento.xEvento'),
-                    'nSeqEvento' => Arrays::get($prot, 'infEvento.nSeqEvento'),
-                    'dhRegEvento' => Arrays::get($prot, 'infEvento.dhRegEvento'),
-                    'nProt' => Arrays::get($prot, 'infEvento.nProt'),
-                    'xml' => $xml->xpathXml('/procEventoCTe', $i)->asXML()
-                ];
+            /**
+             * Remapping protocol data (remove attributes, add version and XML)
+             */
+            Arrays::set($aData, 'protCTe.xml', $parserProt->xpathXml('/protCTe', 0)->asXML());
+            Arrays::set($aData['protCTe'], 'versao', Arrays::get($aData, 'protCTe.@attributes.versao'));
+            Arrays::forget($aData, [
+                'protCTe.@attributes',
+                'protCTe.infProt.@attributes'
+            ]);
+            $parser['protCTe'] = $aData['protCTe'];
+            /**
+             * Check if there is a retCancCTe group (deprecated)
+             */
+            // if (isset($aData['retCancCTe']) && ! empty($aData['retCancCTe'])) {
+            // $prot = $aData['retCancCTe'];
+            // $parser['retCancCTe'] = [
+            // 'versao' => Arrays::get($prot, '@attributes.versao'),
+            // 'tpAmb' => Arrays::get($prot, 'infProt.tpAmb'),
+            // 'verAplic' => Arrays::get($prot, 'infProt.verAplic'),
+            // 'chCTe' => Arrays::get($prot, 'infProt.chCTe'),
+            // 'dhRecbto' => Arrays::get($prot, 'infProt.dhRecbto'),
+            // 'nProt' => Arrays::get($prot, 'infProt.nProt'),
+            // 'digVal' => Arrays::get($prot, 'infProt.digVal'),
+            // 'cStat' => Arrays::get($prot, 'infProt.cStat'),
+            // 'xMotivo' => Arrays::get($prot, 'infProt.xMotivo'),
+            // 'xml' => $parserProt->xpathXml('/retCancCTe', 0)->asXML()
+            // ];
+            // }
+            /**
+             * Check if there is a procEventoCTe group
+             */
+            if (isset($aData['procEventoCTe']) && ! empty($aData['procEventoCTe'])) {
+                if (! isset($aData['procEventoCTe'][0])) {
+                    $aData['procEventoCTe'] = [
+                        $aData['procEventoCTe']
+                    ];
+                }
+                /**
+                 * Getting data for each events
+                 */
+                $parser['procEventoCTe'] = [];
+                foreach ($aData['procEventoCTe'] as $i => $prot) {
+                    $prot = $prot['retEventoCTe'];
+                    $parser['procEventoCTe'][] = [
+                        'versao' => Arrays::get($prot, '@attributes.versao'),
+                        'tpAmb' => Arrays::get($prot, 'infEvento.tpAmb'),
+                        'verAplic' => Arrays::get($prot, 'infEvento.verAplic'),
+                        'cOrgao' => Arrays::get($prot, 'infEvento.cOrgao'),
+                        'cStat' => Arrays::get($prot, 'infEvento.cStat'),
+                        'xMotivo' => Arrays::get($prot, 'infEvento.xMotivo'),
+                        'chCTe' => Arrays::get($prot, 'infEvento.chCTe'),
+                        'tpEvento' => Arrays::get($prot, 'infEvento.tpEvento'),
+                        'xEvento' => Arrays::get($prot, 'infEvento.xEvento'),
+                        'nSeqEvento' => Arrays::get($prot, 'infEvento.nSeqEvento'),
+                        'dhRegEvento' => Arrays::get($prot, 'infEvento.dhRegEvento'),
+                        'nProt' => Arrays::get($prot, 'infEvento.nProt'),
+                        'xml' => $parserProt->xpathXml('/procEventoCTe', $i)->asXML()
+                    ];
+                }
             }
         }
         return $parser;
@@ -222,6 +255,7 @@ class ParserResponse
 
     /**
      * Parse SEFAZ response of CteStatusServico
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
@@ -252,6 +286,7 @@ class ParserResponse
 
     /**
      * Parse response Distribuição documentos e informações de interesse do ator do CT-e
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
@@ -259,37 +294,51 @@ class ParserResponse
     public static function CTeDistribuicaoDFe(Xml $xml, array $unpack = null): array
     {
         /**
-         * Suggeted values for $unpack: ['procCTe', 'procEventoCTe']
+         * Arrays to easy parser
+         *
+         * $aData array
          */
-        $xml->load($xml->getXml());
-        $parsed = [
-            'versao' => strtok(Arrays::get($xml->xpath("/@versao", 0), '@attributes.versao'), '_'),
-            'tpAmb' => $xml->xpath("/tpAmb", 0),
-            'verAplic' => $xml->xpath("/verAplic", 0),
-            'cStat' => $xml->xpath("/cStat", 0),
-            'xMotivo' => $xml->xpath("/xMotivo", 0),
-            'dhResp' => $xml->xpath("/dhResp", 0),
-            'ultNSU' => Strings::toInt($xml->xpath("/ultNSU", 0)),
-            'maxNSU' => Strings::toInt($xml->xpath("/maxNSU", 0)),
-            'aDocs' => []
-        ];
-        $docs = $xml->xpath('/loteDistDFeInt/docZip');
-        if ($unpack !== null) {
-            $unpack = array_flip($unpack);
-        }
-        if ($docs !== null) {
+        $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retDistDFeInt');
+        /**
+         * Forgetting all @attributes
+         */
+        Arrays::forget($aData, [
+            '@attributes'
+        ]);
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
+        /**
+         * Ig there is some event or document, process data
+         */
+        if ($aData['bStat'] && ! empty($aData['loteDistDFeInt'])) {
+            $loteDistDFeInt = [];
+            /**
+             * Noraliza package case there is a single document
+             */
+            if (! isset($aData['loteDistDFeInt']['docZip'][0])) {
+                $aData['loteDistDFeInt']['docZip'] = [
+                    $aData['loteDistDFeInt']['docZip']
+                ];
+            }
+            $docs = $aData['loteDistDFeInt']['docZip'];
             foreach ($docs as $doc) {
                 $schema = strtok(Arrays::get($doc, '@attributes.schema'), '_');
-                $parsed['aDocs'][] = [
+                $loteDistDFeInt[] = [
                     'NSU' => Strings::toInt(Arrays::get($doc, '@attributes.NSU')),
                     'schema' => $schema,
                     'xml' => ($unpack !== null && Arrays::keyCheck($schema, $unpack)) || // Some type of package is set and actual package is one of that
                     $unpack === null ? // No restriction of type is set
-                    gzdecode(base64_decode($doc[0])) : null
+                    gzdecode(base64_decode($doc['@value'])) : null
                 ];
             }
+            $aData['aDocs'] = $loteDistDFeInt;
+            unset($aData['loteDistDFeInt']);
         }
-        return $parsed;
+        return $aData;
     }
 
     /**
@@ -392,6 +441,14 @@ class ParserResponse
             'type' => 3,
             'message' => 'Evento registrado, mas não vinculado a CT-e'
         ],
+        '137' => [ // Verified
+            'type' => 1,
+            'message' => 'Nenhum documento localizado'
+        ],
+        '138' => [ // Verified
+            'type' => 1,
+            'message' => 'Documento localizado'
+        ],
         '201' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: O número máximo de numeração de CT-e a inutilizar ultrapassou o limite'
@@ -452,7 +509,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Falha no schema XML'
         ],
-        '216' => [
+        '216' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Chave de Acesso difere da cadastrada'
         ],
@@ -492,7 +549,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Falha no Schema XML do CT-e'
         ],
-        '226' => [
+        '226' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Código da UF do Emitente diverge da UF autorizadora'
         ],
@@ -528,7 +585,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Inscrição SUFRAMA inválida'
         ],
-        '236' => [
+        '236' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Chave de Acesso com dígito verificador inválido'
         ],
@@ -1033,7 +1090,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Grupo CT-e de Substituição não informado para o CT-e de Substituição'
         ],
-        '507' => [
+        '507' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Chave de Acesso inválida (Tipo de emissão inválido)'
         ],
@@ -1365,23 +1422,23 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Dígito Verificador inválido na Chave de acesso de NF-e transportada'
         ],
-        '592' => [
+        '592' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Chave de acesso inválida (Ano < 2009 ou Ano maior que Ano corrente)'
         ],
-        '593' => [
+        '593' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Chave de acesso inválida (Mês = 0 ou Mês > 12)'
         ],
-        '594' => [
+        '594' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Chave de acesso inválida (CNPJ zerado ou digito inválido)'
         ],
-        '595' => [
+        '595' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Chave de acesso inválida (modelo diferente de 57 ou 67)'
         ],
-        '596' => [
+        '596' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Chave de acesso inválida (número CT = 0)'
         ],
@@ -1393,7 +1450,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Não é permitida a presença de caracteres de edição no início/fim da mensagem ou entre as tags da mensagem'
         ],
-        '600' => [
+        '600' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Chave de Acesso difere da existente em BD'
         ],
@@ -1429,7 +1486,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Chave de Acesso de MDF-e inválida (UF inválida)'
         ],
-        '610' => [
+        '610' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Chave de Acesso inválida (UF inválida)'
         ],
@@ -1861,7 +1918,7 @@ class ParserResponse
             'type' => 0,
             'message' => 'Rejeição: Razão Social inválida para remetente/destinatário sem indicador de CT-e Globalizado'
         ],
-        '731' => [
+        '731' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Consulta a uma Chave de Acesso muito antiga'
         ],

@@ -5,11 +5,10 @@ use Inspire\Dfe\Certificate;
 use Inspire\Config\Config;
 use Inspire\Validator\Variable;
 use Inspire\Dfe\Cte\ParserResponse;
-use Inspire\Validator\XsdSchema;
 use Inspire\Support\Xml\Xml;
 
 /**
- * Invalidate CT -e numbering
+ * Check current status of CT -e configuration and sent
  */
 try {
     $cte = new Cte([
@@ -17,14 +16,14 @@ try {
         'version' => '3.00',
         'saveFiles' => true,
         'xUF' => 'RS',
-        'tpAmb' => 2,
+        'tpAmb' => 1,
         'CNPJ' => $CNPJ,
         'schemaPath' => ROOT_DIR . '/tests/schemas/CTe3.00a'
         // Optionals
         // 'date' => '2021-02-28',
         // 'UF' => '43'
     ], $cert);
-    $send = $cte->CteInutilizacao(999, 999999996, 999999996, 'Test Invalidate CT -e numbering');
+    $send = $cte->CteConsulta('[chave]');
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {

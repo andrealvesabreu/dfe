@@ -518,6 +518,7 @@ class Cte extends Dfe
 
     /**
      * Query document on webservice
+     * Fully implemented
      *
      * @param string $chCTe
      * @return \Inspire\Support\Message\System\SystemMessage
@@ -563,14 +564,32 @@ class Cte extends Dfe
          */
         $paths = $response->getExtra('paths');
         if ($paths !== null) {
-            $baseName = $chCTe . '-' . date('Y_m_d-H_i_s');
-            // Save sent file
+            $baseName = "{$chCTe}-" . date('Y_m_d-H_i_s');
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
             $fileSent = "{$paths['request']}/{$baseName}-consSitCTe.xml";
             file_put_contents($fileSent, $body->getXml());
-            // Save response file, if server has processed request succefully
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
             if ($response->isOk()) {
                 $fileResponse = "{$paths['response']}/{$baseName}-retConsSitCTe.xml";
-                file_put_contents($fileResponse, $response->getExtra('xml'));
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
             }
         }
         return $response;
@@ -578,6 +597,7 @@ class Cte extends Dfe
 
     /**
      * Query WS status
+     * Fully implemented
      *
      * @return \Inspire\Support\Message\System\SystemMessage
      */
@@ -615,23 +635,42 @@ class Cte extends Dfe
          */
         $paths = $response->getExtra('paths');
         if ($paths !== null) {
-            $dateWs = date('Y_m_d-H_i_s'); // substr($response->getExtra('parse.dhRecbto'), 0, 19);
-            $baseName = str_replace([
-                '-',
-                'T',
-                ':'
-            ], [
-                '_',
-                '-',
-                '_'
-            ], "{$response->getExtra('parse.cUF')}-{$dateWs}");
-            // Save sent file
+            // $dateWs =substr($response->getExtra('parse.dhRecbto'), 0, 19);
+            $baseName = date('Y_m_d-H_i_s');
+            // $baseName = str_replace([
+            // '-',
+            // 'T',
+            // ':'
+            // ], [
+            // '_',
+            // '-',
+            // '_'
+            // ], "{$response->getExtra('parse.cUF')}-{$dateWs}");
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
             $fileSent = "{$paths['request']}/{$baseName}-consStatServCTe.xml";
             file_put_contents($fileSent, $body->getXml());
-            // Save response file, if server has processed request succefully
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
             if ($response->isOk()) {
                 $fileResponse = "{$paths['response']}/{$baseName}-retConsStatServCTe.xml";
-                file_put_contents($fileResponse, $response->getExtra('xml'));
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
             }
         }
         return $response;
@@ -779,6 +818,7 @@ class Cte extends Dfe
 
     /**
      * Distribution of documents and information of interest to the CT-e actor
+     * Fully implemented
      *
      * @param int $nsu
      * @return SystemMessage
@@ -789,6 +829,7 @@ class Cte extends Dfe
         if (! $initialize->isOk()) {
             return $initialize;
         }
+        $ultNSU = str_pad((string) $nsu, 15, '0', STR_PAD_LEFT);
         $body = [
             'distDFeInt' => [
                 '@attributes' => [
@@ -799,12 +840,67 @@ class Cte extends Dfe
                 'cUFAutor' => $this->cUF,
                 'CNPJ' => $this->CNPJ,
                 'distNSU' => [
-                    'ultNSU' => str_pad((string) $nsu, 15, '0', STR_PAD_LEFT)
+                    'ultNSU' => $ultNSU
                 ]
             ]
         ];
         $body = Xml::arrayToXml($body, null, true);
-        return $this->send($body, true);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/distDFeInt_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        $response = $this->send($body, true);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            // $dateWs = substr($response->getExtra('parse.dhRecbto'), 0, 19);
+            $baseName = "{$this->CNPJ}_{$ultNSU}_{$response->getExtra('parse.cUF')}_" . date('Y_m_d-H_i_s');
+            // $baseName = str_replace([
+            // '-',
+            // 'T',
+            // ':'
+            // ], [
+            // '_',
+            // '-',
+            // '_'
+            // ], "{$this->CNPJ}_{$ultNSU}_{$response->getExtra('parse.cUF')}-{$dateWs}");
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-distDFeInt.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retDistDFeInt.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
+            }
+        }
+        return $response;
     }
 
     /**
