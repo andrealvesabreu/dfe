@@ -6,7 +6,6 @@ use Inspire\Validator\ {
     Variable,
     XsdSchema
 };
-use Inspire\Dfe\Cte\ParserResponse;
 use Inspire\Support\Message\System\SystemMessage;
 use Inspire\Support\Xml\Xml;
 use Inspire\Support\ {
@@ -676,62 +675,46 @@ class Cte extends Dfe
         return $response;
     }
 
-    // /**
-    // * Query company registration
-    // * Available over NFe webservices, only
-    // *
-    // * @param string $idLot
-    // * @param array $CTe
-    // * @return SystemMessage
-    // */
-    // public function CteConsultaCadastro(string $UF, ?string $cpfCnpj = null, ?string $IE = null): SystemMessage
-    // {
-    // if ($cpfCnpj === null && $IE === null) {
-    // return new SystemMessage("Please fill one document do query.", // Message
-    // '1', // System code
-    // SystemMessage::MSG_ERROR, // System status code
-    // false); // System status
-    // }
-    // if ((strlen($cpfCnpj) == 11 && ! Variable::cpf()->validate($cpfCnpj)) || (strlen($cpfCnpj) == 14 && ! Variable::cnpj()->validate($cpfCnpj))) {
-    // return new SystemMessage("Invalid CTe CPF/CNPJ: {$cpfCnpj}", // Message
-    // '1', // System code
-    // SystemMessage::MSG_ERROR, // System status code
-    // false); // System status
-    // }
-    // $initialize = $this->prepare(__FUNCTION__);
-    // if (! $initialize->isOk()) {
-    // return $initialize;
-    // }
-    // $tag = $value = null;
-    // if (strlen($cpfCnpj) == 14) {
-    // $tag = 'CNPJ';
-    // $value = $cpfCnpj;
-    // } elseif (strlen($cpfCnpj) == 11) {
-    // $tag = 'CPF';
-    // $value = $cpfCnpj;
-    // } else {
-    // $tag = 'IE';
-    // $value = $IE;
-    // }
-    // $body = [
-    // 'ConsCad' => [
-    // '@attributes' => [
-    // 'xmlns' => $this->urlPortal,
-    // 'versao' => $this->urlVersion
-    // ],
-    // 'infCons' => [
-    // 'xServ' => 'CONS-CAD',
-    // 'UF' => $UF,
-    // $tag => $value
-    // ]
-    // ]
-    // ];
-    // $body = Xml::arrayToXml($body, null, true);
-    // return $this->send($body);
-    // }
+    /**
+     * Create event general part
+     * Fully implemented
+     *
+     * @param string $chDFe
+     * @param int $nSeqEvent
+     * @param string $tipo
+     * @param array $detEvent
+     * @return string
+     */
+    protected function event(string $chDFe, int $nSeqEvent, string $type, array $detEvent): Xml
+    {
+        $nSeqEvent = str_pad((string) $nSeqEvent, 2, '0', STR_PAD_LEFT);
+        $body = [
+            'eventoCTe' => [
+                '@attributes' => [
+                    'xmlns' => $this->urlPortal,
+                    'versao' => $this->urlVersion
+                ],
+                'infEvento' => [
+                    '@attributes' => [
+                        'Id' => "ID{$type}{$chDFe}{$nSeqEvent}"
+                    ],
+                    'cOrgao' => $this->cUF,
+                    'tpAmb' => $this->tpAmb,
+                    'CNPJ' => $this->CNPJ,
+                    'chCTe' => $chDFe,
+                    'dhEvento' => date('c'),
+                    'tpEvento' => $type,
+                    'nSeqEvento' => intval($nSeqEvent),
+                    'detEvento' => $detEvent
+                ]
+            ]
+        ];
+        return new Xml($this->sign(Xml::arrayToXml($body), 'infEvento', 'Id', 'eventoCTe'));
+    }
 
     /**
      * Cancellation event
+     * Fully implemented
      *
      * @param string $chCTe
      * @param int $nSeqEvent
@@ -739,11 +722,11 @@ class Cte extends Dfe
      * @param string $xJust
      * @return SystemMessage
      */
-    public function cancel(string $chCTe, int $nSeqEvent, string $nProt, string $xJust): SystemMessage
+    public function evCancCTe(string $chCTe, int $nSeqEvent, string $nProt, string $xJust): SystemMessage
     {
         if (! Variable::nfeAccessKey()->validate($chCTe)) {
             return new SystemMessage("Invalid CTe key: {$chCTe}", // Message
-            '1', // System code
+            '0', // System code
             SystemMessage::MSG_ERROR, // System status code
             false); // System status
         }
@@ -762,8 +745,78 @@ class Cte extends Dfe
                 'xJust' => $xJust
             ]
         ];
-        $xmlEvent = $this->event($chCTe, $nSeqEvent, $type, $detEvent);
-        return $this->send($xmlEvent);
+        $body = $this->event($chCTe, $nSeqEvent, $type, $detEvent);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            /**
+             * Validate main event structure
+             */
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+            /**
+             * Validate specific event structure
+             */
+            XsdSchema::validate(Xml::arrayToXml([
+                'evCancCTe' => $detEvent['evCancCTe']
+            ]), "{$this->schemaPath}/evCancCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chCTe}-{$type}-{$nSeqEvent}";
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-eventoCTe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEventoCTe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
+
+                /**
+                 * Save protocol
+                 */
+                if ($response->getExtra('parse.infEvento.cStat') == 135) {
+                    $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
+                    $fileCanc = "{$paths['document']}/{$chCTe}-{$type}-procEventoCTe.xml";
+                    $response->addExtra([
+                        'parse.procXML' => $canc,
+                        'parse.pathXML' => $fileCanc
+                    ]);
+                    file_put_contents($fileCanc, $canc);
+                }
+            }
+        }
+        return $response;
     }
 
     /**
@@ -903,38 +956,57 @@ class Cte extends Dfe
         return $response;
     }
 
-    /**
-     * Create event general part
-     *
-     * @param string $chDFe
-     * @param int $nSeqEvent
-     * @param string $tipo
-     * @param array $detEvent
-     * @return string
-     */
-    protected function event(string $chDFe, int $nSeqEvent, string $type, array $detEvent): Xml
-    {
-        $body = [
-            'eventoCTe' => [
-                '@attributes' => [
-                    'xmlns' => $this->urlPortal,
-                    'versao' => $this->urlVersion
-                ],
-                'infEvento' => [
-                    '@attributes' => [
-                        'Id' => "ID{$type}{$chDFe}{$nSeqEvent}"
-                    ],
-                    'cOrgao' => $this->cUF,
-                    'tpAmb' => $this->tpAmb,
-                    'CNPJ' => $this->CNPJ,
-                    'chCTe' => $chDFe,
-                    'dhEvento' => date('c'),
-                    'tpEvento' => $type,
-                    'nSeqEvento' => str_pad((string) $nSeqEvent, 2, '0', STR_PAD_LEFT),
-                    'detEvento' => $detEvent
-                ]
-            ]
-        ];
-        return new Xml($this->sign(Xml::arrayToXml($body), 'infEvento', 'Id', 'eventoCTe'));
-    }
+    // /**
+    // * Query company registration
+    // * Available over NFe webservices, only
+    // *
+    // * @param string $idLot
+    // * @param array $CTe
+    // * @return SystemMessage
+    // */
+    // public function CteConsultaCadastro(string $UF, ?string $cpfCnpj = null, ?string $IE = null): SystemMessage
+    // {
+    // if ($cpfCnpj === null && $IE === null) {
+    // return new SystemMessage("Please fill one document do query.", // Message
+    // '1', // System code
+    // SystemMessage::MSG_ERROR, // System status code
+    // false); // System status
+    // }
+    // if ((strlen($cpfCnpj) == 11 && ! Variable::cpf()->validate($cpfCnpj)) || (strlen($cpfCnpj) == 14 && ! Variable::cnpj()->validate($cpfCnpj))) {
+    // return new SystemMessage("Invalid CTe CPF/CNPJ: {$cpfCnpj}", // Message
+    // '1', // System code
+    // SystemMessage::MSG_ERROR, // System status code
+    // false); // System status
+    // }
+    // $initialize = $this->prepare(__FUNCTION__);
+    // if (! $initialize->isOk()) {
+    // return $initialize;
+    // }
+    // $tag = $value = null;
+    // if (strlen($cpfCnpj) == 14) {
+    // $tag = 'CNPJ';
+    // $value = $cpfCnpj;
+    // } elseif (strlen($cpfCnpj) == 11) {
+    // $tag = 'CPF';
+    // $value = $cpfCnpj;
+    // } else {
+    // $tag = 'IE';
+    // $value = $IE;
+    // }
+    // $body = [
+    // 'ConsCad' => [
+    // '@attributes' => [
+    // 'xmlns' => $this->urlPortal,
+    // 'versao' => $this->urlVersion
+    // ],
+    // 'infCons' => [
+    // 'xServ' => 'CONS-CAD',
+    // 'UF' => $UF,
+    // $tag => $value
+    // ]
+    // ]
+    // ];
+    // $body = Xml::arrayToXml($body, null, true);
+    // return $this->send($body);
+    // }
 }

@@ -856,7 +856,7 @@ class Dfe
         /**
          * Prevent erros processing if parser class does not exists
          */
-        $parser = __NAMESPACE__ . '\\' . ucfirst($this->xMod) . '\ParserResponse';
+        $parser = __NAMESPACE__ . '\\Parser\\' . ucfirst($this->xMod);
         if (! class_exists($parser)) {
             throw new \Exception("Parser class {$parser} does not exists.");
         }
@@ -949,10 +949,10 @@ class Dfe
                         switch ($this->mod) {
                             case 57:
                             case 67:
-                                $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.CteRecepcaoEvento.{$this->eventCode[$match[1]]}");
+                                $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.CteRecepcaoEvento.{$this->eventCode[$match[1]]['schema'][$this->mod]}");
                                 break;
                             case 58:
-                                $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.MdfeRecepcaoEvento.{$this->eventCode[$match[1]]}");
+                                $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.MdfeRecepcaoEvento.{$this->eventCode[$match[1]]['schema'][$this->mod]}");
                                 break;
                         }
                     } else {

@@ -1,6 +1,6 @@
 <?php
 declare(strict_types = 1);
-namespace Inspire\Dfe\Mdfe;
+namespace Inspire\Dfe\Parser;
 
 use Inspire\Support\Xml\Xml;
 use Inspire\Support\ {
@@ -13,7 +13,7 @@ use Inspire\Support\ {
  *
  * @author aalves
  */
-class ParserResponse
+class Mdfe extends Base
 {
 
     /**

@@ -3,29 +3,30 @@ include 'cte_base.php';
 use Inspire\Dfe\Cte;
 use Inspire\Dfe\Certificate;
 use Inspire\Config\Config;
-use Inspire\Validator\Variable;
 use Inspire\Dfe\Cte\ParserResponse;
 use Inspire\Support\Xml\Xml;
+use Inspire\Validator\ {
+    Variable,
+    XsdSchema
+};
 
 /**
- * Distributes documents and information of interest to the CT-e actor configuration and sent
+ * Check current status of CT -e configuration and sent
  */
 try {
     $cte = new Cte([
         'mod' => '57',
-        'version' => '1.00',
+        'version' => '3.00',
         'saveFiles' => true,
         'xUF' => 'RS',
-        'tpAmb' => 1,
+        'tpAmb' => 2,
         'CNPJ' => $CNPJ,
-        'xUFAut' => 'AN',
-        'schemaPath' => ROOT_DIR . '/tests/schemas/CTeDistDFe_100'
+        'schemaPath' => ROOT_DIR . '/tests/schemas/CTe3.00a'
         // Optionals
-        // 'date' => '2021-02-28'
-        // 'UF' => '43',
+        // 'date' => '2021-02-28',
+        // 'UF' => '43'
     ], $cert);
-//     \Inspire\Dfe\Parser\Cte::getDistDfeSchemas(['procCTe']);
-    $send = $cte->CTeDistribuicaoDFe(1150);
+    $send = $cte->evCancCTe('[chave]', 1, '[protocolo]', 'motivo cancelamento cte minimo 15 chars');
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {

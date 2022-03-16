@@ -1,6 +1,6 @@
 <?php
 declare(strict_types = 1);
-namespace Inspire\Dfe\Cte;
+namespace Inspire\Dfe\Parser;
 
 use Inspire\Support\Xml\Xml;
 use Inspire\Support\ {
@@ -13,7 +13,7 @@ use Inspire\Support\ {
  *
  * @author aalves
  */
-class ParserResponse
+class Cte extends Base
 {
 
     /**
@@ -278,9 +278,17 @@ class ParserResponse
     public static function CteRecepcaoEvento(Xml $xml): array
     {
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retEventoCTe');
+        Arrays::set($aData, 'infEvento.versao', Arrays::get($aData, '@attributes.versao'));
         Arrays::forget($aData, [
+            'infEvento.@attributes',
             '@attributes'
         ]);
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['infEvento']['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
         return $aData;
     }
 
@@ -291,7 +299,7 @@ class ParserResponse
      * @param Xml $xml
      * @return array
      */
-    public static function CTeDistribuicaoDFe(Xml $xml, array $unpack = null): array
+    public static function CTeDistribuicaoDFe(Xml $xml): array
     {
         /**
          * Arrays to easy parser
@@ -324,16 +332,18 @@ class ParserResponse
                     $aData['loteDistDFeInt']['docZip']
                 ];
             }
+            var_dump(self::$unpack);
             $docs = $aData['loteDistDFeInt']['docZip'];
             foreach ($docs as $doc) {
                 $schema = strtok(Arrays::get($doc, '@attributes.schema'), '_');
-                $loteDistDFeInt[] = [
-                    'NSU' => Strings::toInt(Arrays::get($doc, '@attributes.NSU')),
-                    'schema' => $schema,
-                    'xml' => ($unpack !== null && Arrays::keyCheck($schema, $unpack)) || // Some type of package is set and actual package is one of that
-                    $unpack === null ? // No restriction of type is set
-                    gzdecode(base64_decode($doc['@value'])) : null
-                ];
+                if ((self::$unpack !== null && Arrays::keyCheck($schema, self::$unpack)) || // Some type of package is set and actual package is one of that
+                self::$unpack === null) {
+                    $loteDistDFeInt[] = [
+                        'NSU' => Strings::toInt(Arrays::get($doc, '@attributes.NSU')),
+                        'schema' => $schema,
+                        'xml' => gzdecode(base64_decode($doc['@value']))
+                    ];
+                }
             }
             $aData['aDocs'] = $loteDistDFeInt;
             unset($aData['loteDistDFeInt']);
