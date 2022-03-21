@@ -6,6 +6,7 @@ use Inspire\Support\Message\System\SystemMessage;
 use Inspire\Validator\Variable;
 use Inspire\Support\Xml\Xml;
 use Inspire\Support\Arrays;
+use Inspire\Validator\XsdSchema;
 
 /**
  * Description of Mdfe
@@ -18,12 +19,12 @@ use Inspire\Support\Arrays;
  *
  * Web Service - MDFeRecepcao
  * Web Service - MDFeRecepcaoSinc
- * Web Service - MDFeRetRecepcao
- * Web Service - MDFeConsulta
- * Web Service - MDFeConsNaoEnc
- * Web Service - MDFeStatusServico
+ * Web Service - MDFeRetRecepcao OK
+ * Web Service - MDFeConsulta OK
+ * Web Service - MDFeConsNaoEnc OK
+ * Web Service - MDFeStatusServico OK
  * Web Service - MDFeRecepcaoEvento
- * Web Service - MDFeDistribuicaoDFe
+ * Web Service - MDFeDistribuicaoDFe OK
  *
  * @author aalves
  */
@@ -90,6 +91,7 @@ class Mdfe extends Dfe
 
     /**
      * Query authorization status
+     * Fully implemented
      *
      * @param string $rec
      * @return SystemMessage
@@ -111,11 +113,168 @@ class Mdfe extends Dfe
             ]
         ];
         $body = Xml::arrayToXml($body, null, true);
-        return $this->send($body);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consReciMDFe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$rec}-" . date('Y_m_d-H_i_s');
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-consReciMDFe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retConsReciMDFe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
+                /**
+                 * If webservice provided a response
+                 */
+                if ($response->getExtra('parse.bStat')) {
+                    foreach ($response->getExtra('parse.protMDFe') as $cteKey => $protMDFe) {
+                        if (Arrays::get($protMDFe, 'infProt.cStat') == '100') {
+                            /**
+                             * Load signed file in an array
+                             *
+                             * @var array $signedVersions
+                             */
+                            $signedFile = "{$paths['signed']}/{$protMDFe['infProt']['chMDFe']}.xml";
+                            $signedVersions = file($signedFile);
+                            $digVal = "<DigestValue>{$protMDFe['infProt']['digVal']}</DigestValue>";
+                            foreach ($signedVersions as $sv) {
+                                if (strpos($sv, $digVal)) {
+                                    /**
+                                     * Create a Dom object with signed file
+                                     *
+                                     * @var \DOMDocument $signed
+                                     */
+                                    $signed = new \DOMDocument('1.0', 'utf-8');
+                                    $signed->formatOutput = false;
+                                    $signed->loadXml(rtrim($sv, PHP_EOL));
+                                    /**
+                                     * Create a Dom object with protocol
+                                     *
+                                     * @var \DOMDocument $signed
+                                     */
+                                    $prot = new \DOMDocument('1.0', 'utf-8');
+                                    $prot->formatOutput = false;
+                                    $prot->loadXml(rtrim($protMDFe['xml'], PHP_EOL));
+
+                                    /**
+                                     * Create a new Dom object to add signed and protocol to a new file
+                                     *
+                                     * @var \DOMDocument $procMDFe
+                                     */
+                                    $procMDFe = new \DOMDocument('1.0', 'utf-8');
+                                    $procMDFe->formatOutput = false;
+                                    $procMDFe->preserveWhiteSpace = false;
+                                    /**
+                                     * Tag mdfeProc
+                                     *
+                                     * @var \DOMElement $mdfeProc
+                                     */
+                                    $mdfeProc = $procMDFe->createElement('mdfeProc');
+                                    $procMDFe->appendChild($mdfeProc);
+                                    /**
+                                     * Attribute versao
+                                     *
+                                     * @var \DOMElement $versao
+                                     */
+                                    $versao = $mdfeProc->appendChild($procMDFe->createAttribute('versao'));
+                                    $versao->appendChild($procMDFe->createTextNode($protMDFe['versao']));
+                                    /**
+                                     * Attribute xmlns
+                                     *
+                                     * @var \DOMElement $xmlns
+                                     */
+                                    $xmlns = $mdfeProc->appendChild($procMDFe->createAttribute('xmlns'));
+                                    $xmlns->appendChild($procMDFe->createTextNode('http://www.portalfiscal.inf.br/mdfe'));
+                                    /**
+                                     * Append MDFe tag
+                                     *
+                                     * @var \DOMElement $MDFe
+                                     */
+                                    $node = $procMDFe->importNode($signed->getElementsByTagName('MDFe')
+                                        ->item(0), true);
+                                    $mdfeProc->appendChild($node);
+                                    /**
+                                     * Append protMDFe tag
+                                     *
+                                     * @var \DOMElement $protMDFe
+                                     */
+                                    $nodep = $procMDFe->importNode($prot->getElementsByTagName('protMDFe')
+                                        ->item(0), true);
+                                    $mdfeProc->appendChild($nodep);
+                                    /**
+                                     * Normalize XML
+                                     *
+                                     * @var string $procXML
+                                     */
+                                    $procXML = str_replace('xmlns="http://www.portalfiscal.inf.br/mdfe" xmlns="http://www.w3.org/2000/09/xmldsig#"', 'xmlns="http://www.portalfiscal.inf.br/mdfe"', //
+                                    str_replace(array(
+                                        ' standalone="no"',
+                                        'default:',
+                                        ':default',
+                                        "\n",
+                                        "\r",
+                                        "\t"
+                                    ), '', $procMDFe->saveXML()));
+                                    $procMDFeFile = "{$paths['document']}/{$protMDFe['infProt']['chMDFe']}-procMDFe.xml";
+                                    file_put_contents($procMDFeFile, $procXML);
+                                    $protMDFe['procXML'] = $procXML;
+                                    $protMDFe['pathXML'] = $procMDFeFile;
+                                    $response->addExtra([
+                                        "parse.protMDFe.{$cteKey}" => $protMDFe
+                                    ]);
+                                    /**
+                                     * Set the right document on signed file to skip invalid data
+                                     */
+                                    if (count($signedVersions) > 0) {
+                                        file_put_contents($signedFile, $sv);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return $response;
     }
 
     /**
      * Query document on webservice
+     * Fully implemented
      *
      * @param string $chMDFe
      * @return \Inspire\Support\Message\System\SystemMessage
@@ -123,7 +282,7 @@ class Mdfe extends Dfe
     public function MDFeConsulta(string $chMDFe): SystemMessage
     {
         if (! Variable::nfeAccessKey()->validate($chMDFe)) {
-            return new SystemMessage("Invalid CTe key: {$chMDFe}", // Message
+            return new SystemMessage("Invalid MDFe key: {$chMDFe}", // Message
             '1', // System code
             SystemMessage::MSG_ERROR, // System status code
             false); // System status
@@ -144,17 +303,66 @@ class Mdfe extends Dfe
             ]
         ];
         $body = Xml::arrayToXml($body, null, true);
-        return $this->send($body);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consSitMDFe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chMDFe}-" . date('Y_m_d-H_i_s');
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-consSitMDFe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retConsSitMDFe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
+            }
+        }
+        return $response;
     }
 
     /**
      * Query document on webservice
+     * Fully implemented
      *
      * @param string $chMDFe
      * @return \Inspire\Support\Message\System\SystemMessage
      */
-    public function MDFeConsNaoEnc(string $doc): SystemMessage
+    public function MDFeConsNaoEnc(?string $doc): SystemMessage
     {
+        if ($doc === null) {
+            $doc = $this->CNPJ;
+        }
         if ((strlen($doc) != 11 && strlen($doc) != 14) || // Length validation
         (strlen($doc) == 11 && ! Variable::cpf()->validate($doc)) || // CPF validation
         (strlen($doc) == 14 && ! Variable::cnpj()->validate($doc))) // CNPJ validation
@@ -181,7 +389,6 @@ class Mdfe extends Dfe
         $tag = strlen($doc) == 11 ? 'CPF' : 'CNPJ';
         Arrays::set($body, "consMDFeNaoEnc.{$tag}", $doc);
         $body = Xml::arrayToXml($body, null, true);
-
         $response = $this->send($body);
         /**
          * Save files
@@ -191,13 +398,31 @@ class Mdfe extends Dfe
         $paths = $response->getExtra('paths');
         if ($paths !== null) {
             $baseName = "{$response->getExtra('parse.cUF')}_{$this->CNPJ}_" . date('Y_m_d-H_i_s');
-            // Save sent file
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
             $fileSent = "{$paths['request']}/{$baseName}-consMDFeNaoEnc.xml";
             file_put_contents($fileSent, $body->getXml());
-            // Save response file, if server has processed request succefully
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
             if ($response->isOk()) {
                 $fileResponse = "{$paths['response']}/{$baseName}-retConsMDFeNaoEnc.xml";
-                file_put_contents($fileResponse, $response->getExtra('xml'));
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
             }
         }
         return $response;
@@ -205,6 +430,7 @@ class Mdfe extends Dfe
 
     /**
      * Query WS status
+     * Fully implemented
      *
      * @return \Inspire\Support\Message\System\SystemMessage
      */
@@ -233,35 +459,53 @@ class Mdfe extends Dfe
          */
         $paths = $response->getExtra('paths');
         if ($paths !== null) {
-            $baseName = strtr("{$response->getExtra('parse.cUF')}-{$response->getExtra('parse.dhRecbto')}", [
-                '-' => '_',
-                'T' => '_',
-                ':' => '_'
-            ]);
-            // Save sent file
+            $baseName = date('Y_m_d-H_i_s');
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
             $fileSent = "{$paths['request']}/{$baseName}-consStatServMDFe.xml";
             file_put_contents($fileSent, $body->getXml());
-            // Save response file, if server has processed request succefully
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
             if ($response->isOk()) {
                 $fileResponse = "{$paths['response']}/{$baseName}-retConsStatServMDFe.xml";
-                file_put_contents($fileResponse, $response->getExtra('xml'));
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
             }
         }
         return $response;
     }
-    
+
     /**
-     * Distribution of documents and information of interest to the MDF-e actor
      *
-     * @param int $nsu
+     * Distribution of documents and information of interest to the MDF-e actor
+     * Fully implemented
+     *
+     * @param int $ultNSU
+     * @param int $NSU
      * @return SystemMessage
      */
-    public function MDFeDistribuicaoDFe(int $nsu): SystemMessage
+    public function MDFeDistribuicaoDFe(?int $ultNSU = null, ?int $NSU = null): SystemMessage
     {
         $initialize = $this->prepare(__FUNCTION__);
         if (! $initialize->isOk()) {
             return $initialize;
         }
+        $pathPart = '';
         $body = [
             'distDFeInt' => [
                 '@attributes' => [
@@ -269,16 +513,75 @@ class Mdfe extends Dfe
                     'versao' => $this->urlVersion
                 ],
                 'tpAmb' => $this->tpAmb,
-                'CNPJ' => $this->CNPJ,
-                'distNSU' => [
-                    'ultNSU' => str_pad((string) $nsu, 15, '0', STR_PAD_LEFT)
-                ]
+                'CNPJ' => $this->CNPJ
             ]
         ];
+        if ($ultNSU !== null) {
+            $pathPart = str_pad((string) $ultNSU, 15, '0', STR_PAD_LEFT);
+            $tag = 'distNSU';
+            $value = [
+                'ultNSU' => $pathPart
+            ];
+        } else if ($NSU !== null) {
+            $pathPart = str_pad((string) $NSU, 15, '0', STR_PAD_LEFT);
+            $tag = 'consNSU';
+            $value = [
+                'NSU' => $pathPart
+            ];
+        } else {
+            return new SystemMessage('You must provide last NSU, an NSU or a valid MDFe', // Message
+            '1', // System code
+            SystemMessage::MSG_ERROR, // System status code
+            false); // System status
+        }
+        Arrays::set($body, "distDFeInt.{$tag}", $value);
         $body = Xml::arrayToXml($body, null, true);
-        var_dump($body);
-        exit;
-        return $this->send($body, true);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/distDFeInt_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$this->CNPJ}_{$pathPart}_{$response->getExtra('parse.cUF')}_" . date('Y_m_d-H_i_s');
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-distDFeInt.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retDistDFeInt.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
+            }
+        }
+        return $response;
     }
 
     /**
@@ -314,56 +617,6 @@ class Mdfe extends Dfe
             ]
         ];
         $xmlEvent = $this->event($chMDFe, $nSeqEvent, $type, $detEvent);
-        return $this->send($xmlEvent);
-    }
-
-    /**
-     * Sending proof of delivery
-     *
-     * @param string $chCTe
-     * @param int $nSeqEvent
-     * @param array $evCECTe
-     * @return SystemMessage
-     */
-    public function deliveryReceipt(string $chCTe, int $nSeqEvent, array $evCECTe): SystemMessage
-    {
-        $initialize = $this->prepare('CteRecepcaoEvento');
-        if (! $initialize->isOk()) {
-            return $initialize;
-        }
-        $tpEvent = '110180';
-        $detEvent = [
-            '@attributes' => [
-                'versaoEvento' => $this->urlVersion
-            ],
-            'evCECTe' => $evCECTe
-        ];
-        $xmlEvent = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
-        return $this->send($xmlEvent);
-    }
-
-    /**
-     * Proof of delivery cancellation event
-     *
-     * @param string $chCTe
-     * @param int $nSeqEvent
-     * @param array $evCancCECTe
-     * @return SystemMessage
-     */
-    public function deliveryReceiptCancel(string $chCTe, int $nSeqEvent, array $evCancCECTe): SystemMessage
-    {
-        $initialize = $this->prepare('CteRecepcaoEvento');
-        if (! $initialize->isOk()) {
-            return $initialize;
-        }
-        $tpEvent = '110181';
-        $detEvent = [
-            '@attributes' => [
-                'versaoEvento' => $this->urlVersion
-            ],
-            'evCancCECTe' => $evCancCECTe
-        ];
-        $xmlEvent = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
         return $this->send($xmlEvent);
     }
 

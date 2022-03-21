@@ -124,6 +124,7 @@ class Cte extends Base
 
     /**
      * Parse SEFAZ response of CteInutilizacao
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
@@ -160,35 +161,35 @@ class Cte extends Base
          * $aData array
          */
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retConsSitCTe');
+        var_dump($aData);
         /**
          * Forgetting all @attributes
          */
         Arrays::forget($aData, [
             '@attributes'
         ]);
+        $parser = [
+            'versao' => Arrays::get($aData, '@attributes.versao'),
+            'tpAmb' => Arrays::get($aData, 'tpAmb'),
+            'verAplic' => Arrays::get($aData, 'verAplic'),
+            'cStat' => Arrays::get($aData, 'cStat'),
+            'xMotivo' => Arrays::get($aData, 'xMotivo'),
+            'cUF' => Arrays::get($aData, 'cUF')
+        ];
         /**
          * Adding control info
          */
-        Arrays::set($aData, 'cType', self::$messages[$aData['cStat']]['type']);
-        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
-        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
+        Arrays::set($parser, 'cType', self::$messages[$aData['cStat']]['type']);
+        Arrays::set($parser, 'xReason', self::$messageType[$parser['cType']]);
+        Arrays::set($parser, 'bStat', $parser['cType'] == 1);
         /**
          * If there is a CTe
          */
-        if (true) {
+        if ($parser['bStat']) {
             /**
              * XML to get all XML (protocol and events)
              */
             $parserProt = new Xml($xml->getXml(), true);
-            $parser = [
-                'versao' => $aData['@attributes']['versao'],
-                'tpAmb' => $aData['tpAmb'],
-                'verAplic' => $aData['verAplic'],
-                'cStat' => $aData['cStat'],
-                'xMotivo' => $aData['xMotivo'],
-                'cUF' => $aData['cUF'],
-                'protCTe' => []
-            ];
             /**
              * Remapping protocol data (remove attributes, add version and XML)
              */
@@ -319,6 +320,7 @@ class Cte extends Base
         Arrays::set($aData, 'cType', self::$messages[$aData['cStat']]['type']);
         Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
         Arrays::set($aData, 'bStat', $aData['cType'] == 1);
+        Arrays::set($aData, 'isLast', intval($aData['ultNSU']) == intval($aData['maxNSU']));
         /**
          * Ig there is some event or document, process data
          */
@@ -332,7 +334,6 @@ class Cte extends Base
                     $aData['loteDistDFeInt']['docZip']
                 ];
             }
-            var_dump(self::$unpack);
             $docs = $aData['loteDistDFeInt']['docZip'];
             foreach ($docs as $doc) {
                 $schema = strtok(Arrays::get($doc, '@attributes.schema'), '_');
@@ -361,41 +362,27 @@ class Cte extends Base
         return self::$messages[$code];
     }
 
-    /**
-     * Response codes and messages.
-     * Group messages by status type
-     */
-    private static array $messageType = [
-        0 => 'Error on message sent. Fix package before resending',
-        1 => 'OK',
-        2 => 'Wait before try again',
-        3 => 'Temporary error on service',
-        4 => 'Permanent error on service',
-        5 => 'Permanent error with carrier registration',
-        6 => 'Certificate error'
-    ];
-
     /*
      * @var array
      */
     private static array $messages = [
-        '100' => [
+        '100' => [ // Verified
             'type' => 1,
             'message' => 'Autorizado o uso do CT-e'
         ],
-        '101' => [
+        '101' => [ // Verified
             'type' => 1,
             'message' => 'Cancelamento de CT-e homologado'
         ],
-        '102' => [
+        '102' => [ // Verified
             'type' => 1,
             'message' => 'Inutilização de número homologado'
         ],
-        '103' => [
+        '103' => [ // Verified
             'type' => 1,
             'message' => 'Lote recebido com sucesso'
         ],
-        '104' => [
+        '104' => [ // Verified
             'type' => 1,
             'message' => 'Lote processado'
         ],

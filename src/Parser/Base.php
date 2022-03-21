@@ -26,5 +26,19 @@ class Base
     {
         self::$unpack = array_flip($schemas);
     }
+
+    /**
+     * Response codes and messages.
+     * Group messages by status type
+     */
+    protected static array $messageType = [
+        0 => 'Error on message sent. Fix package before resending',
+        1 => 'OK',
+        2 => 'Wait before try again',
+        3 => 'Temporary error on service',
+        4 => 'Permanent error on service',
+        5 => 'Permanent error with carrier registration',
+        6 => 'Certificate error'
+    ];
 }
 

@@ -24,8 +24,11 @@ try {
         // 'date' => '2021-02-28'
         // 'UF' => '43',
     ], $cert);
-//     \Inspire\Dfe\Parser\Cte::getDistDfeSchemas(['procCTe']);
-    $send = $cte->CTeDistribuicaoDFe(1150);
+    \Inspire\Dfe\Parser\Cte::getDistDfeSchemas([
+        'procCTe'
+    ]);
+    $send = $cte->CTeDistribuicaoDFe(12590);
+//     $send = $cte->CTeDistribuicaoDFe(null, 12651);
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {

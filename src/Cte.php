@@ -303,106 +303,108 @@ class Cte extends Dfe
                  */
                 if ($response->getExtra('parse.bStat')) {
                     foreach ($response->getExtra('parse.protCTe') as $cteKey => $protCTe) {
-                        /**
-                         * Load signed file in an array
-                         *
-                         * @var array $signedVersions
-                         */
-                        $signedFile = "{$paths['signed']}/{$protCTe['infProt']['chCTe']}.xml";
-                        $signedVersions = file($signedFile);
-                        $digVal = "<DigestValue>{$protCTe['infProt']['digVal']}</DigestValue>";
-                        foreach ($signedVersions as $sv) {
-                            if (strpos($sv, $digVal)) {
-                                /**
-                                 * Create a Dom object with signed file
-                                 *
-                                 * @var \DOMDocument $signed
-                                 */
-                                $signed = new \DOMDocument('1.0', 'utf-8');
-                                $signed->formatOutput = false;
-                                $signed->loadXml(rtrim($sv, PHP_EOL));
-                                /**
-                                 * Create a Dom object with protocol
-                                 *
-                                 * @var \DOMDocument $signed
-                                 */
-                                $prot = new \DOMDocument('1.0', 'utf-8');
-                                $prot->formatOutput = false;
-                                $prot->loadXml(rtrim($protCTe['xml'], PHP_EOL));
+                        if (Arrays::get($protCTe, 'infProt.cStat') == '100') {
+                            /**
+                             * Load signed file in an array
+                             *
+                             * @var array $signedVersions
+                             */
+                            $signedFile = "{$paths['signed']}/{$protCTe['infProt']['chCTe']}.xml";
+                            $signedVersions = file($signedFile);
+                            $digVal = "<DigestValue>{$protCTe['infProt']['digVal']}</DigestValue>";
+                            foreach ($signedVersions as $sv) {
+                                if (strpos($sv, $digVal)) {
+                                    /**
+                                     * Create a Dom object with signed file
+                                     *
+                                     * @var \DOMDocument $signed
+                                     */
+                                    $signed = new \DOMDocument('1.0', 'utf-8');
+                                    $signed->formatOutput = false;
+                                    $signed->loadXml(rtrim($sv, PHP_EOL));
+                                    /**
+                                     * Create a Dom object with protocol
+                                     *
+                                     * @var \DOMDocument $signed
+                                     */
+                                    $prot = new \DOMDocument('1.0', 'utf-8');
+                                    $prot->formatOutput = false;
+                                    $prot->loadXml(rtrim($protCTe['xml'], PHP_EOL));
 
-                                /**
-                                 * Create a new Dom object to add signed and protocol to a new file
-                                 *
-                                 * @var \DOMDocument $procCte
-                                 */
-                                $procCte = new \DOMDocument('1.0', 'utf-8');
-                                $procCte->formatOutput = false;
-                                $procCte->preserveWhiteSpace = false;
-                                /**
-                                 * Tag cteProc
-                                 *
-                                 * @var \DOMElement $cteProc
-                                 */
-                                $cteProc = $procCte->createElement('cteProc');
-                                $procCte->appendChild($cteProc);
-                                /**
-                                 * Attribute versao
-                                 *
-                                 * @var \DOMElement $versao
-                                 */
-                                $versao = $cteProc->appendChild($procCte->createAttribute('versao'));
-                                $versao->appendChild($procCte->createTextNode($protCTe['versao']));
-                                /**
-                                 * Attribute xmlns
-                                 *
-                                 * @var \DOMElement $xmlns
-                                 */
-                                $xmlns = $cteProc->appendChild($procCte->createAttribute('xmlns'));
-                                $xmlns->appendChild($procCte->createTextNode('http://www.portalfiscal.inf.br/cte'));
-                                /**
-                                 * Append CTe tag
-                                 *
-                                 * @var \DOMElement $CTe
-                                 */
-                                $node = $procCte->importNode($signed->getElementsByTagName('CTe')
-                                    ->item(0), true);
-                                $cteProc->appendChild($node);
-                                /**
-                                 * Append protCTe tag
-                                 *
-                                 * @var \DOMElement $protCTe
-                                 */
-                                $nodep = $procCte->importNode($prot->getElementsByTagName('protCTe')
-                                    ->item(0), true);
-                                $cteProc->appendChild($nodep);
-                                /**
-                                 * Normalize XML
-                                 *
-                                 * @var string $procXML
-                                 */
-                                $procXML = str_replace('xmlns="http://www.portalfiscal.inf.br/cte" xmlns="http://www.w3.org/2000/09/xmldsig#"', 'xmlns="http://www.portalfiscal.inf.br/cte"', //
-                                str_replace(array(
-                                    ' standalone="no"',
-                                    'default:',
-                                    ':default',
-                                    "\n",
-                                    "\r",
-                                    "\t"
-                                ), '', $procCte->saveXML()));
-                                $procCTeFile = "{$paths['document']}/{$protCTe['infProt']['chCTe']}-procCTe.xml";
-                                file_put_contents($procCTeFile, $procXML);
-                                $protCTe['procXML'] = $procXML;
-                                $protCTe['pathXML'] = $procCTeFile;
-                                $response->addExtra([
-                                    "parse.protCTe.{$cteKey}" => $protCTe
-                                ]);
-                                /**
-                                 * Set the right document on signed file to skip invalid data
-                                 */
-                                if (count($signedVersions) > 0) {
-                                    file_put_contents($signedFile, $sv);
+                                    /**
+                                     * Create a new Dom object to add signed and protocol to a new file
+                                     *
+                                     * @var \DOMDocument $procCte
+                                     */
+                                    $procCte = new \DOMDocument('1.0', 'utf-8');
+                                    $procCte->formatOutput = false;
+                                    $procCte->preserveWhiteSpace = false;
+                                    /**
+                                     * Tag cteProc
+                                     *
+                                     * @var \DOMElement $cteProc
+                                     */
+                                    $cteProc = $procCte->createElement('cteProc');
+                                    $procCte->appendChild($cteProc);
+                                    /**
+                                     * Attribute versao
+                                     *
+                                     * @var \DOMElement $versao
+                                     */
+                                    $versao = $cteProc->appendChild($procCte->createAttribute('versao'));
+                                    $versao->appendChild($procCte->createTextNode($protCTe['versao']));
+                                    /**
+                                     * Attribute xmlns
+                                     *
+                                     * @var \DOMElement $xmlns
+                                     */
+                                    $xmlns = $cteProc->appendChild($procCte->createAttribute('xmlns'));
+                                    $xmlns->appendChild($procCte->createTextNode('http://www.portalfiscal.inf.br/cte'));
+                                    /**
+                                     * Append CTe tag
+                                     *
+                                     * @var \DOMElement $CTe
+                                     */
+                                    $node = $procCte->importNode($signed->getElementsByTagName('CTe')
+                                        ->item(0), true);
+                                    $cteProc->appendChild($node);
+                                    /**
+                                     * Append protCTe tag
+                                     *
+                                     * @var \DOMElement $protCTe
+                                     */
+                                    $nodep = $procCte->importNode($prot->getElementsByTagName('protCTe')
+                                        ->item(0), true);
+                                    $cteProc->appendChild($nodep);
+                                    /**
+                                     * Normalize XML
+                                     *
+                                     * @var string $procXML
+                                     */
+                                    $procXML = str_replace('xmlns="http://www.portalfiscal.inf.br/cte" xmlns="http://www.w3.org/2000/09/xmldsig#"', 'xmlns="http://www.portalfiscal.inf.br/cte"', //
+                                    str_replace(array(
+                                        ' standalone="no"',
+                                        'default:',
+                                        ':default',
+                                        "\n",
+                                        "\r",
+                                        "\t"
+                                    ), '', $procCte->saveXML()));
+                                    $procCTeFile = "{$paths['document']}/{$protCTe['infProt']['chCTe']}-procCTe.xml";
+                                    file_put_contents($procCTeFile, $procXML);
+                                    $protCTe['procXML'] = $procXML;
+                                    $protCTe['pathXML'] = $procCTeFile;
+                                    $response->addExtra([
+                                        "parse.protCTe.{$cteKey}" => $protCTe
+                                    ]);
+                                    /**
+                                     * Set the right document on signed file to skip invalid data
+                                     */
+                                    if (count($signedVersions) > 0) {
+                                        file_put_contents($signedFile, $sv);
+                                    }
+                                    break;
                                 }
-                                break;
                             }
                         }
                     }
@@ -634,17 +636,7 @@ class Cte extends Dfe
          */
         $paths = $response->getExtra('paths');
         if ($paths !== null) {
-            // $dateWs =substr($response->getExtra('parse.dhRecbto'), 0, 19);
             $baseName = date('Y_m_d-H_i_s');
-            // $baseName = str_replace([
-            // '-',
-            // 'T',
-            // ':'
-            // ], [
-            // '_',
-            // '-',
-            // '_'
-            // ], "{$response->getExtra('parse.cUF')}-{$dateWs}");
             /**
              * Save sent file
              *
@@ -870,19 +862,21 @@ class Cte extends Dfe
     }
 
     /**
+     *
      * Distribution of documents and information of interest to the CT-e actor
      * Fully implemented
      *
-     * @param int $nsu
+     * @param int $ultNSU
+     * @param int $NSU
      * @return SystemMessage
      */
-    public function CTeDistribuicaoDFe(int $nsu): SystemMessage
+    public function CTeDistribuicaoDFe(?int $ultNSU = null, ?int $NSU = null): SystemMessage
     {
         $initialize = $this->prepare(__FUNCTION__);
         if (! $initialize->isOk()) {
             return $initialize;
         }
-        $ultNSU = str_pad((string) $nsu, 15, '0', STR_PAD_LEFT);
+
         $body = [
             'distDFeInt' => [
                 '@attributes' => [
@@ -891,12 +885,29 @@ class Cte extends Dfe
                 ],
                 'tpAmb' => $this->tpAmb,
                 'cUFAutor' => $this->cUF,
-                'CNPJ' => $this->CNPJ,
-                'distNSU' => [
-                    'ultNSU' => $ultNSU
-                ]
+                'CNPJ' => $this->CNPJ
             ]
         ];
+        $pathPart = '';
+        if ($ultNSU !== null) {
+            $pathPart = str_pad((string) $ultNSU, 15, '0', STR_PAD_LEFT);
+            $tag = 'distNSU';
+            $value = [
+                'ultNSU' => $pathPart
+            ];
+        } else if ($NSU !== null) {
+            $pathPart = str_pad((string) $NSU, 15, '0', STR_PAD_LEFT);
+            $tag = 'consNSU';
+            $value = [
+                'NSU' => $pathPart
+            ];
+        } else {
+            return new SystemMessage('You must provide last NSU, an NSU or a valid CTe', // Message
+            '1', // System code
+            SystemMessage::MSG_ERROR, // System status code
+            false); // System status
+        }
+        Arrays::set($body, "distDFeInt.{$tag}", $value);
         $body = Xml::arrayToXml($body, null, true);
         /**
          * Validate XML before send
@@ -915,17 +926,7 @@ class Cte extends Dfe
          */
         $paths = $response->getExtra('paths');
         if ($paths !== null) {
-            // $dateWs = substr($response->getExtra('parse.dhRecbto'), 0, 19);
-            $baseName = "{$this->CNPJ}_{$ultNSU}_{$response->getExtra('parse.cUF')}_" . date('Y_m_d-H_i_s');
-            // $baseName = str_replace([
-            // '-',
-            // 'T',
-            // ':'
-            // ], [
-            // '_',
-            // '-',
-            // '_'
-            // ], "{$this->CNPJ}_{$ultNSU}_{$response->getExtra('parse.cUF')}-{$dateWs}");
+            $baseName = "{$this->CNPJ}_{$pathPart}_{$response->getExtra('parse.cUF')}_" . date('Y_m_d-H_i_s');
             /**
              * Save sent file
              *

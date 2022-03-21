@@ -37,40 +37,56 @@ class Nfe extends Base
      * @param Xml $xml
      * @return array
      */
-    public static function NFeDistribuicaoDFe(Xml $xml, array $unpack = null): array
+    public static function NFeDistribuicaoDFe(Xml $xml): array
     {
         /**
-         * Suggeted values for $unpack: ['procNFe', 'procEventoNFe']
+         * Arrays to easy parser
+         *
+         * $aData array
          */
-        $xml->load($xml->getXml());
-        $parsed = [
-            'versao' => strtok(Arrays::get($xml->xpath("/@versao", 0), '@attributes.versao'), '_'),
-            'tpAmb' => $xml->xpath("/tpAmb", 0),
-            'verAplic' => $xml->xpath("/verAplic", 0),
-            'cStat' => $xml->xpath("/cStat", 0),
-            'xMotivo' => $xml->xpath("/xMotivo", 0),
-            'dhResp' => $xml->xpath("/dhResp", 0),
-            'ultNSU' => Strings::toInt($xml->xpath("/ultNSU", 0)),
-            'maxNSU' => Strings::toInt($xml->xpath("/maxNSU", 0)),
-            'aDocs' => []
-        ];
-        $docs = $xml->xpath('/loteDistDFeInt/docZip');
-        if ($unpack !== null) {
-            $unpack = array_flip($unpack);
-        }
-        if ($docs !== null) {
-            foreach ($docs as $doc) {
-                $schema = strtok(Arrays::get($doc, '@attributes.schema'), '_');
-                $parsed['aDocs'][] = [
-                    'NSU' => Strings::toInt(Arrays::get($doc, '@attributes.NSU')),
-                    'schema' => $schema,
-                    'xml' => ($unpack !== null && Arrays::keyCheck($schema, $unpack)) || // Some type of package is set and actual package is one of that
-                    $unpack === null ? // No restriction of type is set
-                    gzdecode(base64_decode($doc[0])) : null
+        $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retDistDFeInt');
+        /**
+         * Forgetting all @attributes
+         */
+        Arrays::forget($aData, [
+            '@attributes'
+        ]);
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
+        Arrays::set($aData, 'isLast', intval($aData['ultNSU']) == intval($aData['maxNSU']));
+        /**
+         * Ig there is some event or document, process data
+         */
+        if ($aData['bStat'] && ! empty($aData['loteDistDFeInt'])) {
+            $loteDistDFeInt = [];
+            /**
+             * Noraliza package case there is a single document
+             */
+            if (! isset($aData['loteDistDFeInt']['docZip'][0])) {
+                $aData['loteDistDFeInt']['docZip'] = [
+                    $aData['loteDistDFeInt']['docZip']
                 ];
             }
+            $docs = $aData['loteDistDFeInt']['docZip'];
+            foreach ($docs as $doc) {
+                $schema = strtok(Arrays::get($doc, '@attributes.schema'), '_');
+                if ((self::$unpack !== null && Arrays::keyCheck($schema, self::$unpack)) || // Some type of package is set and actual package is one of that
+                self::$unpack === null) {
+                    $loteDistDFeInt[] = [
+                        'NSU' => Strings::toInt(Arrays::get($doc, '@attributes.NSU')),
+                        'schema' => $schema,
+                        'xml' => gzdecode(base64_decode($doc['@value']))
+                    ];
+                }
+            }
+            $aData['aDocs'] = $loteDistDFeInt;
+            unset($aData['loteDistDFeInt']);
         }
-        return $parsed;
+        return $aData;
     }
 
     /**
@@ -97,1862 +113,1849 @@ class Nfe extends Base
      * @var array
      */
     private static array $messages = [
-        '100' => [
-            'type' => 1,
-            'message' => 'Autorizado o uso do CT-e'
+        '100 	' => [
+            'type' => 0,
+            'message' => 'Autorizado o uso da NF-e'
         ],
-        '101' => [
-            'type' => 1,
-            'message' => 'Cancelamento de CT-e homologado'
+        '101 	' => [
+            'type' => 0,
+            'message' => 'Cancelamento de NF-e homologado'
         ],
-        '102' => [
-            'type' => 1,
+        '102 	' => [
+            'type' => 0,
             'message' => 'Inutilização de número homologado'
         ],
-        '103' => [
-            'type' => 1,
+        '103 	' => [
+            'type' => 0,
             'message' => 'Lote recebido com sucesso'
         ],
-        '104' => [
-            'type' => 1,
+        '104 	' => [
+            'type' => 0,
             'message' => 'Lote processado'
         ],
-        '105' => [
-            'type' => 2,
+        '105 	' => [
+            'type' => 0,
             'message' => 'Lote em processamento'
         ],
-        '106' => [
+        '106 	' => [
             'type' => 0,
             'message' => 'Lote não localizado'
         ],
-        '107' => [
-            'type' => 1,
+        '107 	' => [
+            'type' => 0,
             'message' => 'Serviço em Operação'
         ],
-        '108' => [
-            'type' => 3,
+        '108 	' => [
+            'type' => 0,
             'message' => 'Serviço Paralisado Momentaneamente (curto prazo)'
         ],
-        '109' => [
-            'type' => 4,
+        '109 	' => [
+            'type' => 0,
             'message' => 'Serviço Paralisado sem Previsão'
         ],
-        '110' => [
-            'type' => 4,
+        '110 	' => [
+            'type' => 0,
             'message' => 'Uso Denegado'
         ],
-        '111' => [
-            'type' => 1,
+        '111 	' => [
+            'type' => 0,
             'message' => 'Consulta cadastro com uma ocorrência'
         ],
-        '112' => [
-            'type' => 1,
+        '112 	' => [
+            'type' => 0,
             'message' => 'Consulta cadastro com mais de uma ocorrência'
         ],
-        '113' => [
-            'type' => 1,
-            'message' => 'Serviço SVC em operação. Desativação prevista para a UF em dd/mm/aa, às hh:mm horas'
-        ],
-        '114' => [
+        '124 	' => [
             'type' => 0,
-            'message' => 'SVC-[SP/RS] desabilitada pela SEFAZ de Origem'
+            'message' => 'EPEC Autorizado'
         ],
-        '134' => [
-            'type' => 1,
-            'message' => 'Evento registrado e vinculado ao CT-e com alerta para situação do documento. [Alerta Situação do CT-e: XXXXXXXXXX]'
-        ],
-        '135' => [
-            'type' => 1,
-            'message' => 'Evento registrado e vinculado a CT-e'
-        ],
-        '136' => [
-            'type' => 3,
-            'message' => 'Evento registrado, mas não vinculado a CT-e'
-        ],
-        '201' => [
+        '128 	' => [
             'type' => 0,
-            'message' => 'Rejeição: O número máximo de numeração de CT-e a inutilizar ultrapassou o limite'
+            'message' => 'Lote de Evento Processado'
         ],
-        '202' => [
+        '135 	' => [
+            'type' => 0,
+            'message' => 'Evento registrado e vinculado a NF-e'
+        ],
+        '136 	' => [
+            'type' => 0,
+            'message' => 'Evento registrado, mas não vinculado a NF-e'
+        ],
+        '137 	' => [
+            'type' => 0,
+            'message' => 'Nenhum documento localizado para o Destinatário'
+        ],
+        '138 	' => [
+            'type' => 0,
+            'message' => 'Documento localizado para o Destinatário'
+        ],
+        '139 	' => [
+            'type' => 0,
+            'message' => 'Pedido de Download processado'
+        ],
+        '140 	' => [
+            'type' => 0,
+            'message' => 'Download disponibilizado'
+        ],
+        '142 	' => [
+            'type' => 0,
+            'message' => 'Ambiente de Contingência EPEC bloqueado para o Emitente'
+        ],
+        '150 	' => [
+            'type' => 0,
+            'message' => 'Autorizado o uso da NF-e, autorização fora de prazo'
+        ],
+        '151 	' => [
+            'type' => 0,
+            'message' => 'Cancelamento de NF-e homologado fora de prazo'
+        ],
+        '201 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Número máximo de numeração a inutilizar ultrapassou o limite'
+        ],
+        '202 	' => [
             'type' => 0,
             'message' => 'Rejeição: Falha no reconhecimento da autoria ou integridade do arquivo digital'
         ],
-        '203' => [
-            'type' => 5,
-            'message' => 'Rejeição: Emissor não habilitado para emissão do CT-e'
-        ],
-        '204' => [
+        '203 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Duplicidade de CT-e[nProt:999999999999999][dhAut: AAAA-MM-DDTHH:MM:SS TZD]'
+            'message' => 'Rejeição: Emissor não habilitado para emissão de NF-e'
         ],
-        '205' => [
-            'type' => 4,
-            'message' => 'Rejeição: CT-e está denegado na base de dados da SEFAZ'
-        ],
-        '206' => [
+        '204 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Número de CT-e já está inutilizado na Base de dados da SEFAZ'
+            'message' => 'Duplicidade de NF-e [nRec:999999999999999]'
         ],
-        '207' => [
+        '205 	' => [
+            'type' => 0,
+            'message' => 'NF-e está denegada na base de dados da SEFAZ [nRec:999999999999999]'
+        ],
+        '206 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e já está inutilizada na Base de dados da SEFAZ'
+        ],
+        '207 	' => [
             'type' => 0,
             'message' => 'Rejeição: CNPJ do emitente inválido'
         ],
-        '208' => [
+        '208 	' => [
             'type' => 0,
             'message' => 'Rejeição: CNPJ do destinatário inválido'
         ],
-        '209' => [
+        '209 	' => [
             'type' => 0,
             'message' => 'Rejeição: IE do emitente inválida'
         ],
-        '210' => [
+        '210 	' => [
             'type' => 0,
             'message' => 'Rejeição: IE do destinatário inválida'
         ],
-        '211' => [
+        '211 	' => [
             'type' => 0,
             'message' => 'Rejeição: IE do substituto inválida'
         ],
-        '212' => [
+        '212 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Data de emissão CT-e posterior a data de recebimento'
+            'message' => 'Rejeição: Data de emissão NF-e posterior a data de recebimento'
         ],
-        '213' => [
+        '213 	' => [
             'type' => 0,
             'message' => 'Rejeição: CNPJ-Base do Emitente difere do CNPJ-Base do Certificado Digital'
         ],
-        '214' => [
+        '214 	' => [
             'type' => 0,
             'message' => 'Rejeição: Tamanho da mensagem excedeu o limite estabelecido'
         ],
-        '215' => [
+        '215 	' => [
             'type' => 0,
             'message' => 'Rejeição: Falha no schema XML'
         ],
-        '216' => [
+        '216 	' => [
             'type' => 0,
             'message' => 'Rejeição: Chave de Acesso difere da cadastrada'
         ],
-        '217' => [
+        '217 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e não consta na base de dados da SEFAZ'
+            'message' => 'Rejeição: NF-e não consta na base de dados da SEFAZ'
         ],
-        '218' => [
+        '218 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e já está cancelado na base de dados da SEFAZ[nProt:999999999999999][dhCanc: AAAA-MM-DDTHH:MM:SS TZD].'
+            'message' => 'NF-e já está cancelada na base de dados da SEFAZ [nRec:999999999999999]'
         ],
-        '219' => [
+        '219 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Circulação do CT-e verificada'
+            'message' => 'Rejeição: Circulação da NF-e verificada'
         ],
-        '220' => [
+        '220 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e autorizado há mais de 7 dias (168 horas)'
+            'message' => 'Rejeição: Prazo de Cancelamento superior ao previsto na Legislação'
         ],
-        '221' => [
+        '221 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Confirmado a prestação do serviço do CT-e pelo destinatário'
+            'message' => 'Rejeição: Confirmado o recebimento da NF-e pelo destinatário'
         ],
-        '222' => [
+        '222 	' => [
             'type' => 0,
             'message' => 'Rejeição: Protocolo de Autorização de Uso difere do cadastrado'
         ],
-        '223' => [
+        '223 	' => [
             'type' => 0,
             'message' => 'Rejeição: CNPJ do transmissor do lote difere do CNPJ do transmissor da consulta'
         ],
-        '224' => [
+        '224 	' => [
             'type' => 0,
             'message' => 'Rejeição: A faixa inicial é maior que a faixa final'
         ],
-        '225' => [
+        '225 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Falha no Schema XML do CT-e'
+            'message' => 'Rejeição: Falha no Schema XML do lote de NFe'
         ],
-        '226' => [
+        '226 	' => [
             'type' => 0,
             'message' => 'Rejeição: Código da UF do Emitente diverge da UF autorizadora'
         ],
-        '227' => [
+        '227 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Erro na composição do Campo ID'
+            'message' => 'Rejeição: Erro na Chave de Acesso - Campo Id - falta a literal NFe'
         ],
-        '228' => [
+        '228 	' => [
             'type' => 0,
             'message' => 'Rejeição: Data de Emissão muito atrasada'
         ],
-        '229' => [
+        '229 	' => [
             'type' => 0,
             'message' => 'Rejeição: IE do emitente não informada'
         ],
-        '230' => [
+        '230 	' => [
             'type' => 0,
             'message' => 'Rejeição: IE do emitente não cadastrada'
         ],
-        '231' => [
+        '231 	' => [
             'type' => 0,
             'message' => 'Rejeição: IE do emitente não vinculada ao CNPJ'
         ],
-        '232' => [
+        '232 	' => [
             'type' => 0,
             'message' => 'Rejeição: IE do destinatário não informada'
         ],
-        '233' => [
+        '233 	' => [
             'type' => 0,
             'message' => 'Rejeição: IE do destinatário não cadastrada'
         ],
-        '235' => [
-            'type' => 0,
-            'message' => 'Rejeição: Inscrição SUFRAMA inválida'
-        ],
-        '236' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de Acesso com dígito verificador inválido'
-        ],
-        '237' => [
-            'type' => 0,
-            'message' => 'Rejeição: CPF do destinatário inválido'
-        ],
-        '238' => [
-            'type' => 0,
-            'message' => 'Rejeição: Cabeçalho - Versão do arquivo XML superior a Versão vigente'
-        ],
-        '239' => [
-            'type' => 0,
-            'message' => 'Rejeição: Cabeçalho - Versão do arquivo XML não suportada'
-        ],
-        '240' => [
-            'type' => 5,
-            'message' => 'Rejeição: Cancelamento/Inutilização - Irregularidade Fiscal do Emitente'
-        ],
-        '241' => [
-            'type' => 0,
-            'message' => 'Rejeição: Um número da faixa já foi utilizado'
-        ],
-        '242' => [
-            'type' => 0,
-            'message' => 'Rejeição: Elemento cteCabecMsg inexistente no SOAP Header'
-        ],
-        '243' => [
-            'type' => 0,
-            'message' => 'Rejeição: XML Mal Formado'
-        ],
-        '245' => [
-            'type' => 5,
-            'message' => 'Rejeição: CNPJ Emitente não cadastrado'
-        ],
-        '247' => [
-            'type' => 0,
-            'message' => 'Rejeição: Sigla da UF do Emitente diverge da UF autorizadora'
-        ],
-        '248' => [
-            'type' => 0,
-            'message' => 'Rejeição: UF do Recibo diverge da UF autorizadora'
-        ],
-        '249' => [
-            'type' => 0,
-            'message' => 'Rejeição: UF da Chave de Acesso diverge da UF autorizadora'
-        ],
-        '250' => [
-            'type' => 0,
-            'message' => 'Rejeição: UF diverge da UF autorizadora'
-        ],
-        '251' => [
-            'type' => 0,
-            'message' => 'Rejeição: UF/Município destinatário não pertence a SUFRAMA'
-        ],
-        '252' => [
-            'type' => 0,
-            'message' => 'Rejeição: Ambiente informado diverge do Ambiente de recebimento'
-        ],
-        '253' => [
-            'type' => 0,
-            'message' => 'Rejeição: Dígito Verificador da chave de acesso composta inválido'
-        ],
-        '256' => [
-            'type' => 0,
-            'message' => 'Rejeição: Um número de CT-e da faixa está inutilizado na Base de dados da SEFAZ'
-        ],
-        '257' => [
-            'type' => 5,
-            'message' => 'Rejeição: Solicitante não habilitado para emissão do CT-e'
-        ],
-        '258' => [
-            'type' => 0,
-            'message' => 'Rejeição: CNPJ da consulta inválido'
-        ],
-        '259' => [
-            'type' => 5,
-            'message' => 'Rejeição: CNPJ da consulta não cadastrado como contribuinte na UF'
-        ],
-        '260' => [
-            'type' => 0,
-            'message' => 'Rejeição: IE da consulta inválida'
-        ],
-        '261' => [
-            'type' => 5,
-            'message' => 'Rejeição: IE da consulta não cadastrada como contribuinte na UF'
-        ],
-        '262' => [
-            'type' => 0,
-            'message' => 'Rejeição: UF não fornece consulta por CPF'
-        ],
-        '263' => [
-            'type' => 0,
-            'message' => 'Rejeição: CPF da consulta inválido'
-        ],
-        '264' => [
-            'type' => 0,
-            'message' => 'Rejeição: CPF da consulta não cadastrado como contribuinte na UF'
-        ],
-        '265' => [
-            'type' => 0,
-            'message' => 'Rejeição: Sigla da UF da consulta difere da UF do Web Service'
-        ],
-        '266' => [
-            'type' => 0,
-            'message' => 'Rejeição: Série utilizada não permitida no Web Service'
-        ],
-        '267' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e Complementar referência um CT-e inexistente'
-        ],
-        '268' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e Complementar referência outro CT-e Complementar'
-        ],
-        '269' => [
-            'type' => 0,
-            'message' => 'Rejeição: CNPJ Emitente do CT-e Complementar difere do CNPJ do CT complementado'
-        ],
-        '280' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Transmissor inválido'
-        ],
-        '281' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Transmissor Data Validade'
-        ],
-        '282' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Transmissor sem CNPJ'
-        ],
-        '283' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Transmissor - erro Cadeia de Certificação'
-        ],
-        '284' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Transmissor revogado'
-        ],
-        '285' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Transmissor difere ICP-Brasil'
-        ],
-        '286' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Transmissor erro no acesso a LCR'
-        ],
-        '289' => [
-            'type' => 0,
-            'message' => 'Rejeição: Código da UF informada diverge da UF solicitada'
-        ],
-        '290' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Assinatura inválido'
-        ],
-        '291' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Assinatura Data Validade'
-        ],
-        '292' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Assinatura sem CNPJ'
-        ],
-        '293' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Assinatura - erro Cadeia de Certificação'
-        ],
-        '294' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Assinatura revogado'
-        ],
-        '295' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Assinatura difere ICP-Brasil'
-        ],
-        '296' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Assinatura erro no acesso a LCR'
-        ],
-        '297' => [
-            'type' => 0,
-            'message' => 'Rejeição: Assinatura difere do calculado'
-        ],
-        '298' => [
-            'type' => 0,
-            'message' => 'Rejeição: Assinatura difere do padrão do Projeto'
-        ],
-        '299' => [
-            'type' => 0,
-            'message' => 'Rejeição: XML da área de cabeçalho com codificação diferente de UTF-8'
-        ],
-        '401' => [
-            'type' => 0,
-            'message' => 'Rejeição: CPF do remetente inválido'
-        ],
-        '402' => [
-            'type' => 0,
-            'message' => 'Rejeição: XML da área de dados com codificação diferente de UTF-8'
-        ],
-        '404' => [
-            'type' => 0,
-            'message' => 'Rejeição: Uso de prefixo de namespace não permitido'
-        ],
-        '405' => [
-            'type' => 0,
-            'message' => 'Rejeição: Código do país do emitente: dígito inválido'
-        ],
-        '406' => [
-            'type' => 0,
-            'message' => 'Rejeição: Código do país do destinatário: dígito inválido'
-        ],
-        '407' => [
-            'type' => 0,
-            'message' => 'Rejeição: O CPF só pode ser informado no campo emitente para o CT-e avulso'
-        ],
-        '408' => [
-            'type' => 0,
-            'message' => 'Rejeição: Lote com CT-e de diferentes UF'
-        ],
-        '409' => [
-            'type' => 0,
-            'message' => 'Rejeição: Campo cUF inexistente no elemento cteCabecMsg do SOAP Header'
-        ],
-        '410' => [
-            'type' => 0,
-            'message' => 'Rejeição: UF informada no campo cUF não é atendida pelo WebService'
-        ],
-        '411' => [
-            'type' => 0,
-            'message' => 'Rejeição: Campo versaoDados inexistente no elemento cteCabecMsg do SOAP Header'
-        ],
-        '414' => [
-            'type' => 0,
-            'message' => 'Rejeição: Código de Município diverge da UF de término da prestação'
-        ],
-        '415' => [
-            'type' => 0,
-            'message' => 'Rejeição: CNPJ do remetente inválido'
-        ],
-        '416' => [
-            'type' => 0,
-            'message' => 'Rejeição: CPF do remetente inválido'
-        ],
-        '418' => [
-            'type' => 0,
-            'message' => 'Rejeição: Código de Município diverge da UF de localização remetente'
-        ],
-        '419' => [
-            'type' => 0,
-            'message' => 'Rejeição: IE do remetente inválida',
-            'rule' => ''
-        ],
-        '421' => [
-            'type' => 0,
-            'message' => 'Rejeição: IE do remetente não cadastrada'
-        ],
-        '422' => [
-            'type' => 0,
-            'message' => 'Rejeição: IE do remetente não vinculada ao CNPJ'
-        ],
-        '424' => [
-            'type' => 0,
-            'message' => 'Rejeição: Código de Município diverge da UF de localização destinatário'
-        ],
-        '426' => [
-            'type' => 0,
-            'message' => 'Rejeição: IE do destinatário não cadastrada'
-        ],
-        '427' => [
+        '234 	' => [
             'type' => 0,
             'message' => 'Rejeição: IE do destinatário não vinculada ao CNPJ'
         ],
-        '428' => [
+        '235 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ do expedidor inválido'
+            'message' => 'Rejeição: Inscrição SUFRAMA inválida'
         ],
-        '429' => [
+        '236 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CPF do expedidor inválido'
+            'message' => 'Rejeição: Chave de Acesso com dígito verificador inválido'
         ],
-        '431' => [
+        '237 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Código de Município diverge da UF de localização expedidor'
+            'message' => 'Rejeição: CPF do destinatário inválido'
         ],
-        '432' => [
+        '238 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do expedidor inválida'
+            'message' => 'Rejeição: Cabeçalho - Versão do arquivo XML superior a Versão vigente'
         ],
-        '434' => [
+        '239 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do expedidor não cadastrada'
+            'message' => 'Rejeição: Cabeçalho - Versão do arquivo XML não suportada'
         ],
-        '435' => [
+        '240 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do expedidor não vinculada ao CNPJ'
+            'message' => 'Rejeição: Cancelamento/Inutilização - Irregularidade Fiscal do Emitente'
         ],
-        '436' => [
+        '241 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ do recebedor inválido'
+            'message' => 'Rejeição: Um número da faixa já foi utilizado'
         ],
-        '437' => [
+        '242 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CPF do recebedor inválido'
+            'message' => 'Rejeição: Cabeçalho - Falha no Schema XML'
         ],
-        '439' => [
+        '243 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Código de Município diverge da UF de localização recebedor'
+            'message' => 'Rejeição: XML Mal Formado'
         ],
-        '440' => [
+        '244 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do recebedor inválida'
+            'message' => 'Rejeição: CNPJ do Certificado Digital difere do CNPJ da Matriz e do CNPJ do Emitente'
         ],
-        '442' => [
+        '245 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do recebedor não cadastrada'
+            'message' => 'Rejeição: CNPJ Emitente não cadastrado'
         ],
-        '443' => [
+        '246 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do recebedor não vinculada ao CNPJ'
+            'message' => 'Rejeição: CNPJ Destinatário não cadastrado'
         ],
-        '444' => [
+        '247 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ do tomador inválido'
+            'message' => 'Rejeição: Sigla da UF do Emitente diverge da UF autorizadora'
         ],
-        '445' => [
+        '248 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CPF do tomador inválido'
+            'message' => 'Rejeição: UF do Recibo diverge da UF autorizadora'
         ],
-        '447' => [
+        '249 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Código de Município diverge da UF de localização tomador'
+            'message' => 'Rejeição: UF da Chave de Acesso diverge da UF autorizadora'
         ],
-        '448' => [
+        '250 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do tomador inválida'
+            'message' => 'Rejeição: UF diverge da UF autorizadora'
         ],
-        '450' => [
+        '251 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Dígito Verificador inválido na Chave de acesso de CT-e Multimodal'
+            'message' => 'Rejeição: UF/Município destinatário não pertence a SUFRAMA'
         ],
-        '451' => [
+        '252 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e Multimodal inválida (Ano < 2009 ou Ano maior que Ano corrente)'
+            'message' => 'Rejeição: Ambiente informado diverge do Ambiente de recebimento'
         ],
-        '452' => [
+        '253 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e Multimodal inválida (Mês = 0 ou Mês > 12)'
+            'message' => 'Rejeição: Digito Verificador da chave de acesso composta inválida'
         ],
-        '453' => [
+        '254 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e Multimodal inválida (CNPJ zerado ou digito inválido)'
+            'message' => 'Rejeição: NF-e complementar não possui NF referenciada'
         ],
-        '454' => [
+        '255 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e Multimodal inválida (modelo diferente de 57)'
+            'message' => 'Rejeição: NF-e complementar possui mais de uma NF referenciada'
         ],
-        '456' => [
+        '256 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Código de Município diverge da UF de início da prestação'
+            'message' => 'Rejeição: Uma NF-e da faixa já está inutilizada na Base de dados da SEFAZ'
         ],
-        '457' => [
+        '257 	' => [
             'type' => 0,
-            'message' => 'Rejeição: O lote contém CT-e de mais de um estabelecimento emissor'
+            'message' => 'Rejeição: Solicitante não habilitado para emissão da NF-e'
         ],
-        '458' => [
+        '258 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Grupo de CT-e normal não informado para CT-e normal'
+            'message' => 'Rejeição: CNPJ da consulta inválido'
         ],
-        '459' => [
+        '259 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Grupo de CT-e complementar não informado para CT-e complementar'
+            'message' => 'Rejeição: CNPJ da consulta não cadastrado como contribuinte na UF'
         ],
-        '460' => [
+        '260 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Não informado os dados do remetente indicado como tomador do serviço'
+            'message' => 'Rejeição: IE da consulta inválida'
         ],
-        '461' => [
+        '261 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Não informado os dados do expedidor indicado como tomador do serviço'
+            'message' => 'Rejeição: IE da consulta não cadastrada como contribuinte na UF'
         ],
-        '462' => [
+        '262 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Não informado os dados do recebedor indicado como tomador do serviço'
+            'message' => 'Rejeição: UF não fornece consulta por CPF'
         ],
-        '463' => [
+        '263 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Não informado os dados do destinatário indicado como tomador do serviço'
+            'message' => 'Rejeição: CPF da consulta inválido'
         ],
-        '464' => [
+        '264 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Evento Cancelado MDF-e sem existir previamente o evento MDF-e Autorizado'
+            'message' => 'Rejeição: CPF da consulta não cadastrado como contribuinte na UF'
         ],
-        '469' => [
+        '265 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Remetente deve ser informado para tipo de serviço diferente de redespacho intermediário ou Serviço vinculado a multimodal'
+            'message' => 'Rejeição: Sigla da UF da consulta difere da UF do Web Service'
         ],
-        '470' => [
+        '266 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Destinatário deve ser informado para tipo de serviço diferente de redespacho intermediário ou serviço vinculado a multimodal'
+            'message' => 'Rejeição: Série utilizada não permitida no Web Service'
         ],
-        '471' => [
+        '267 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Ano de inutilização não pode ser superior ao Ano atual'
+            'message' => 'Rejeição: NF Complementar referencia uma NF-e inexistente'
         ],
-        '472' => [
+        '268 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Ano de inutilização não pode ser inferior a 2008'
+            'message' => 'Rejeição: NF Complementar referencia outra NF-e Complementar'
         ],
-        '473' => [
+        '269 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Tipo Autorizador do Recibo diverge do Órgão Autorizador'
+            'message' => 'Rejeição: CNPJ Emitente da NF Complementar difere do CNPJ da NF Referenciada'
         ],
-        '474' => [
+        '270 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Expedidor deve ser informado para tipo de serviço de redespacho intermediário e serviço vinculado a multimodal'
+            'message' => 'Rejeição: Código Município do Fato Gerador: dígito inválido'
         ],
-        '475' => [
+        '271 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Recebedor deve ser informado para tipo de serviço de redespacho intermediário e serviço vinculado a multimodal'
+            'message' => 'Rejeição: Código Município do Fato Gerador: difere da UF do emitente'
         ],
-        '478' => [
+        '272 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e Multimodal inválida (número CT = 0)'
+            'message' => 'Rejeição: Código Município do Emitente: dígito inválido'
         ],
-        '479' => [
+        '273 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e Multimodal inválida (Tipo de emissão inválido)'
+            'message' => 'Rejeição: Código Município do Emitente: difere da UF do emitente'
         ],
-        '480' => [
+        '274 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de Acesso de CT-e anterior inválida (Tipo de emissão inválido)'
+            'message' => 'Rejeição: Código Município do Destinatário: dígito inválido'
         ],
-        '481' => [
+        '275 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE deve ser informada para tomador Contribuinte'
+            'message' => 'Rejeição: Código Município do Destinatário: difere da UF do Destinatário'
         ],
-        '482' => [
+        '276 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do tomador isento deve ser preenchida com “ISENTO”'
+            'message' => 'Rejeição: Código Município do Local de Retirada: dígito inválido'
         ],
-        '483' => [
+        '277 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE não pode ser informada para tomador não contribuinte'
+            'message' => 'Rejeição: Código Município do Local de Retirada: difere da UF do Local de Retirada'
         ],
-        '489' => [
+        '278 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do tomador não cadastrada'
+            'message' => 'Rejeição: Código Município do Local de Entrega: dígito inválido'
         ],
-        '490' => [
+        '279 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do tomador não vinculada ao CNPJ'
+            'message' => 'Rejeição: Código Município do Local de Entrega: difere da UF do Local de Entrega'
         ],
-        '491' => [
+        '280 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e complementado é diferente de Normal ou Substituição'
+            'message' => 'Rejeição: Certificado Transmissor inválido'
         ],
-        '493' => [
+        '281 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Código de Município diverge da UF de envio'
+            'message' => 'Rejeição: Certificado Transmissor Data Validade'
         ],
-        '495' => [
+        '282 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Solicitante não autorizado para consulta'
+            'message' => 'Rejeição: Certificado Transmissor sem CNPJ'
         ],
-        '496' => [
+        '283 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Grupo CT-e de Anulação não informado para o CT-e de Anulação'
+            'message' => 'Rejeição: Certificado Transmissor - erro Cadeia de Certificação'
         ],
-        '497' => [
+        '284 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e objeto da anulação inexistente'
+            'message' => 'Rejeição: Certificado Transmissor revogado'
         ],
-        '498' => [
+        '285 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e objeto da anulação deve estar com a situação autorizada (não pode estar cancelado ou denegado)'
+            'message' => 'Rejeição: Certificado Transmissor difere ICP-Brasil'
         ],
-        '499' => [
+        '286 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e de anulação deve ter tipo de emissão = normal'
+            'message' => 'Rejeição: Certificado Transmissor erro no acesso a LCR'
         ],
-        '500' => [
+        '287 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e objeto da anulação deve ter Tipo = 0 (normal) ou 3 (Substituição)'
+            'message' => 'Rejeição: Código Município do FG - ISSQN: dígito inválido'
         ],
-        '501' => [
+        '288 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Autorização do CT-e de Anulação deve ocorrer em até 60 dias da data de autorização do CT-e objeto de anulação'
+            'message' => 'Rejeição: Código Município do FG - Transporte: dígito inválido'
         ],
-        '502' => [
+        '289 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e de anulação deve ter o valor do ICMS e de prestação iguais ao CT-e original'
+            'message' => 'Rejeição: Código da UF informada diverge da UF solicitada'
         ],
-        '503' => [
+        '290 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e substituto deve ter tipo de emissão = normal'
+            'message' => 'Rejeição: Certificado Assinatura inválido'
         ],
-        '504' => [
+        '291 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de Acesso de NF-e inválida (UF inválida)'
+            'message' => 'Rejeição: Certificado Assinatura Data Validade'
         ],
-        '505' => [
+        '292 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Grupo CT-e de Substituição não informado para o CT-e de Substituição'
+            'message' => 'Rejeição: Certificado Assinatura sem CNPJ'
         ],
-        '507' => [
+        '293 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de Acesso inválida (Tipo de emissão inválido)'
+            'message' => 'Rejeição: Certificado Assinatura - erro Cadeia de Certificação'
         ],
-        '508' => [
+        '294 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de Acesso de NF-e inválida (Tipo de emissão inválido)'
+            'message' => 'Rejeição: Certificado Assinatura revogado'
         ],
-        '509' => [
+        '295 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de Acesso de MDF-e inválida (Tipo de emissão inválido)'
+            'message' => 'Rejeição: Certificado Assinatura difere ICP-Brasil'
         ],
-        '510' => [
+        '296 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ do emitente do CT-e substituto deve ser igual ao informado no CT-e substituído'
+            'message' => 'Rejeição: Certificado Assinatura erro no acesso a LCR'
         ],
-        '511' => [
+        '297 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ/CPF do remetente do CT-e substituto deve ser igual ao informado no CT- e substituído'
+            'message' => 'Rejeição: Assinatura difere do calculado'
         ],
-        '512' => [
+        '298 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ/CPF do destinatário do CT-e substituto deve ser igual ao informado no CT-e substituído'
+            'message' => 'Rejeição: Assinatura difere do padrão do Sistema'
         ],
-        '513' => [
+        '299 	' => [
             'type' => 0,
-            'message' => 'Rejeicao: UF nao atendida pela SVC-[SP/RS]'
+            'message' => 'Rejeição: XML da área de cabeçalho com codificação diferente de UTF-8'
         ],
-        '515' => [
+        '301 	' => [
             'type' => 0,
-            'message' => 'Rejeição: O tpEmis informado só é válido na contingência SVC'
+            'message' => 'Uso Denegado: Irregularidade fiscal do emitente'
         ],
-        '516' => [
+        '302 	' => [
             'type' => 0,
-            'message' => 'Rejeição: O tpEmis informado é incompatível com SVC-[SP/RS]'
+            'message' => 'Rejeição: Irregularidade fiscal do destinatário'
         ],
-        '517' => [
+        '303 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e informado em SVC deve ser Normal'
+            'message' => 'Uso Denegado: Destinatário não habilitado a operar na UF'
         ],
-        '518' => [
+        '304 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Serviço indisponível na SVC'
+            'message' => 'Rejeição: Pedido de Cancelamento para NF-e com evento da Suframa'
         ],
-        '519' => [
+        '321 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CFOP inválido para operação'
+            'message' => 'Rejeição: NF-e de devolução de mercadoria não possui documento fiscal referenciado'
         ],
-        '520' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e não pode receber mais do que 10 CT-e Complementares'
-        ],
-        '521' => [
-            'type' => 0,
-            'message' => 'Rejeição: Os documentos de transporte anterior devem ser informados para os tipos de serviço Subcontratação, Redespacho e Redespacho Intermediário'
-        ],
-        '522' => [
-            'type' => 0,
-            'message' => 'Rejeição: Nro Item Alterado inválido. Preencher com valor numérico (01 – 99)'
-        ],
-        '523' => [
-            'type' => 0,
-            'message' => 'Rejeição: Vedado cancelamento quando existir evento Carta de Correção'
-        ],
-        '524' => [
-            'type' => 0,
-            'message' => 'Rejeição: CFOP inválido, informar 5932 ou 6932'
-        ],
-        '525' => [
-            'type' => 0,
-            'message' => 'Rejeição: Carta de correção inválida (campo/grupo “xxxx” informado não existe no schema do CT-e ou não existe no grupo informado)'
-        ],
-        '526' => [
-            'type' => 0,
-            'message' => 'Rejeição: Preencher informações dos containers somente para redespacho intermediário e serviço vinculado a multimodal'
-        ],
-        '527' => [
-            'type' => 0,
-            'message' => 'Rejeição: NF-e duplicada no CT-e[chNFe: 99999999999999999999999999999999999999999999]'
-        ],
-        '528' => [
-            'type' => 0,
-            'message' => 'Rejeição: Vedado cancelamento se exitir MDF-e autorizado para o CT-e'
-        ],
-        '530' => [
-            'type' => 0,
-            'message' => 'Rejeição: Se ambiente SVC, rejeitar eventos diferentes de EPEC, Liberação EPEC e Cancelamento'
-        ],
-        '531' => [
-            'type' => 0,
-            'message' => 'Rejeição: Valor a receber deve ser menor ou igual Valor da Prestação'
-        ],
-        '532' => [
-            'type' => 0,
-            'message' => 'Rejeição: Município do Remetente inexistente'
-        ],
-        '533' => [
-            'type' => 0,
-            'message' => 'Rejeição: Município do Destinatário inexistente'
-        ],
-        '534' => [
-            'type' => 0,
-            'message' => 'Rejeição: Município do Expedidor inexistente'
-        ],
-        '535' => [
-            'type' => 0,
-            'message' => 'Rejeição: Município do Recebedor inexistente'
-        ],
-        '536' => [
-            'type' => 0,
-            'message' => 'Rejeição: Município do Tomador inexistente'
-        ],
-        '537' => [
-            'type' => 0,
-            'message' => 'Rejeição: Município de Envio inexistente'
-        ],
-        '538' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e anterior inválida (UF inválida)'
-        ],
-        '539' => [
-            'type' => 0,
-            'message' => 'Rejeição: Duplicidade de CT-e, com diferença na Chave de Acesso [chCTe: [9999999999999999999999999999999999999999999][nProt:999999999999999][dhAut: AAAA-MM-DDTHH:MM:SS TZD]'
-        ],
-        '540' => [
-            'type' => 0,
-            'message' => 'Rejeição: Grupo de documentos informado inválido para remetente que emite NF-e'
-        ],
-        '541' => [
-            'type' => 0,
-            'message' => 'Rejeição: Município de início da prestação inexistente'
-        ],
-        '542' => [
-            'type' => 0,
-            'message' => 'Rejeição: Município de término da prestação inexistente'
-        ],
-        '543' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de CT-e duplicada em documentos anteriores'
-        ],
-        '544' => [
-            'type' => 0,
-            'message' => 'Rejeição: Dígito Verificador inválido na Chave de acesso de CT-e anterior'
-        ],
-        '545' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e anterior inválida (Ano < 2009 ou Ano maior que Ano corrente'
-        ],
-        '546' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e anterior inválida (Mês = 0 ou Mês > 12)'
-        ],
-        '547' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e anterior inválida (CNPJ zerado ou digito inválido)'
-        ],
-        '548' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e anterior inválida (modelo diferente de 57)'
-        ],
-        '549' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e anterior inválida (número CT = 0)'
-        ],
-        '550' => [
-            'type' => 0,
-            'message' => 'Rejeição: O CNPJ/CPF do expedidor do CT-e substituto deve ser igual ao informado no CT-e substituído'
-        ],
-        '551' => [
-            'type' => 0,
-            'message' => 'Rejeição: O CNPJ/CPF do recebedor do CT-e substituto deve ser igual ao informado no CT-e substituído'
-        ],
-        '552' => [
-            'type' => 0,
-            'message' => 'Rejeição: O CNPJ/CPF do tomador do CT-e substituto deve ser igual ao informado no CT- e substituído'
-        ],
-        '553' => [
-            'type' => 0,
-            'message' => 'Rejeição: A IE do emitente do CT-e substituto deve ser igual ao informado no CT-e substituído'
-        ],
-        '554' => [
-            'type' => 0,
-            'message' => 'Rejeição: A IE do remetente do CT-e substituto deve ser igual ao informado no CT-e substituído'
-        ],
-        '555' => [
-            'type' => 0,
-            'message' => 'Rejeição: A IE do destinatário do CT-e substituto deve ser igual ao informado no CT-e substituído'
-        ],
-        '556' => [
-            'type' => 0,
-            'message' => 'Rejeição: A IE do expedidor do CT-e substituto deve ser igual ao informado no CT-e substituído'
-        ],
-        '557' => [
-            'type' => 0,
-            'message' => 'Rejeição: A IE do recebedor do CT-e substituto deve ser igual ao informado no CT-e substituído'
-        ],
-        '558' => [
-            'type' => 0,
-            'message' => 'Rejeição: A IE do tomador do CT-e substituto deve ser igual ao informado no CT-e substituído'
-        ],
-        '559' => [
-            'type' => 0,
-            'message' => 'Rejeição: A UF de início da prestação deve ser igual ao informado no CT-e substituído'
-        ],
-        '560' => [
-            'type' => 0,
-            'message' => 'Rejeição: A UF de fim da prestação deve ser igual ao informado no CT-e substituído'
-        ],
-        '561' => [
-            'type' => 0,
-            'message' => 'Rejeição: O valor da prestação do serviço deve ser menor ou igual ao informado no CT-e substituído'
-        ],
-        '562' => [
-            'type' => 0,
-            'message' => 'Rejeição: O valor do ICMS do CT-e substituto deve ser menor ou igual ao informado no CT-e substituído'
-        ],
-        '563' => [
-            'type' => 0,
-            'message' => 'Rejeição: A substituição de um CT-e deve ocorrer no prazo máximo de 60 dias contados da data de autorização do CT-e objeto de Substituição'
-        ],
-        '564' => [
-            'type' => 0,
-            'message' => 'Rejeição: O CT-e de anulação não pode ser cancelado'
-        ],
-        '565' => [
-            'type' => 0,
-            'message' => 'Rejeição: O CT-e só pode ser anulado pelo emitente'
-        ],
-        '566' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e objeto da anulação não pode ter sido anulado anteriormente'
-        ],
-        '567' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e objeto da anulação não pode ter sido substituído anteriormente'
-        ],
-        '568' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e a ser substituído inexistente'
-        ],
-        '569' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e a ser substituído deve estar com a situação autorizada (não pode estar cancelado ou denegado)'
-        ],
-        '570' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e a ser substituído não pode ter sido substituído anteriormente'
-        ],
-        '571' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e a ser substituído deve ter Tipo = 0 (normal) ou 3 (Substituição)'
-        ],
-        '572' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e de anulação inexistente'
-        ],
-        '573' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e de anulação informado deve ter Tipo=2(Anulação)'
-        ],
-        '574' => [
-            'type' => 0,
-            'message' => 'Rejeição: Vedado o cancelamento de CT-e do tipo substituto (tipo=3)'
-        ],
-        '575' => [
-            'type' => 0,
-            'message' => 'Rejeição: Vedado o cancelamento se possuir CT-e de Anulação associado'
-        ],
-        '576' => [
-            'type' => 0,
-            'message' => 'Rejeição: Vedado o cancelamento se possuir CT-e de Substituição associado'
-        ],
-        '577' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e a ser substituído não pode ter sido anulado anteriormente quando informados os documentos emitidos pelo tomador contribuinte'
-        ],
-        '578' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso do CT-e anulado deve ser igual ao substituído'
-        ],
-        '579' => [
-            'type' => 0,
-            'message' => 'Rejeição: Versão informada para o modal não suportada'
-        ],
-        '580' => [
-            'type' => 0,
-            'message' => 'Rejeição: Falha no Schema XML específico para o modal'
-        ],
-        '581' => [
-            'type' => 0,
-            'message' => 'Rejeição: Campo Valor da Carga deve ser informado para o modal'
-        ],
-        '582' => [
-            'type' => 0,
-            'message' => 'Rejeição: Grupo Tráfego Mútuo deve ser informado'
-        ],
-        '583' => [
-            'type' => 0,
-            'message' => 'Rejeição: Ferrovia emitente deve ser a de origem quando respFat=1'
-        ],
-        '584' => [
-            'type' => 0,
-            'message' => 'Rejeição: Referenciar o CT-e que foi emitido pela ferrovia de origem'
-        ],
-        '585' => [
-            'type' => 0,
-            'message' => 'Rejeição: IE Emitente não autorizada a emitir CT-e para o modal informado'
-        ],
-        '586' => [
-            'type' => 0,
-            'message' => 'Rejeição: Data e Justificativa de entrada em contingência não devem ser informadas para tipo de emissão diferente de FS-DA.'
-        ],
-        '587' => [
-            'type' => 0,
-            'message' => 'Rejeição: Data e Justificativa de entrada em contingência devem ser informadas'
-        ],
-        '588' => [
-            'type' => 0,
-            'message' => 'Rejeição: Data de entrada em contingência posterior a data de emissão.'
-        ],
-        '589' => [
-            'type' => 0,
-            'message' => 'Rejeição: O lote contém CT-e de mais de um modal'
-        ],
-        '590' => [
-            'type' => 0,
-            'message' => 'Rejeição: O lote contém CT-e de mais de uma versão de modal'
-        ],
-        '591' => [
-            'type' => 0,
-            'message' => 'Rejeição: Dígito Verificador inválido na Chave de acesso de NF-e transportada'
-        ],
-        '592' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso inválida (Ano < 2009 ou Ano maior que Ano corrente)'
-        ],
-        '593' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso inválida (Mês = 0 ou Mês > 12)'
-        ],
-        '594' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso inválida (CNPJ zerado ou digito inválido)'
-        ],
-        '595' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso inválida (modelo diferente de 57 ou 67)'
-        ],
-        '596' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso inválida (número CT = 0)'
-        ],
-        '598' => [
-            'type' => 0,
-            'message' => 'Rejeição: Usar somente o namespace padrao do CT-e'
-        ],
-        '599' => [
-            'type' => 0,
-            'message' => 'Rejeição: Não é permitida a presença de caracteres de edição no início/fim da mensagem ou entre as tags da mensagem'
-        ],
-        '600' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de Acesso difere da existente em BD'
-        ],
-        '601' => [
-            'type' => 0,
-            'message' => 'Rejeição: Quantidade de documentos informados no remetente excede limite de 2000'
-        ],
-        '602' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de NF-e inválida (Ano < 2005 ou Ano maior que Ano corrente)'
-        ],
-        '603' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de NF-e inválida (Mês = 0 ou Mês > 12)'
-        ],
-        '604' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de NF-e inválida (CNPJ zerado ou digito inválido)'
-        ],
-        '605' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de NF-e inválida (modelo diferente de 55)'
-        ],
-        '606' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de NF-e inválida (numero NF = 0)'
-        ],
-        '608' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e Multimodal inválida (UF inválida)'
-        ],
-        '609' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de Acesso de MDF-e inválida (UF inválida)'
-        ],
-        '610' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de Acesso inválida (UF inválida)'
-        ],
-        '611' => [
-            'type' => 0,
-            'message' => 'Rejeição: Registro Passagem CT-e inexistente'
-        ],
-        '612' => [
-            'type' => 0,
-            'message' => 'Rejeição: Registro Passagem CT-e, Nro Protocolo difere'
-        ],
-        '614' => [
-            'type' => 0,
-            'message' => 'Rejeição: IE do Substituto Tributário inválida'
-        ],
-        '615' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e objeto da anulação inválida (modelo diferente de 67)'
-        ],
-        '616' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e substituido inválida (modelo diferente de 67)'
-        ],
-        '617' => [
-            'type' => 0,
-            'message' => 'Rejeição: UF do tomador não aceita ISENTO com Inscrição Estadual'
-        ],
-        '618' => [
-            'type' => 0,
-            'message' => 'Rejeição: GTV informada em duplicidade no evento'
-        ],
-        '619' => [
-            'type' => 0,
-            'message' => 'Rejeição: GTV já informada em outro evento para o mesmo CT-e'
-        ],
-        '627' => [
-            'type' => 0,
-            'message' => 'Rejeição: CNPJ do autor do evento inválido'
-        ],
-        '628' => [
-            'type' => 0,
-            'message' => 'Rejeição: Erro Atributo ID do evento não corresponde a concatenação dos campos (“ID” + tpEvento + chCTe + nSeqEvento)'
-        ],
-        '629' => [
-            'type' => 0,
-            'message' => 'Rejeição: O tpEvento informado inválido'
-        ],
-        '630' => [
-            'type' => 0,
-            'message' => 'Rejeição: Falha no Schema XML específico para o evento'
-        ],
-        '631' => [
-            'type' => 0,
-            'message' => 'Rejeição: Duplicidade de evento[nProt:999999999999999][dhRegEvento: AAAA-MM-DDTHH:MM:SS TZD]'
-        ],
-        '632' => [
-            'type' => 0,
-            'message' => 'Rejeição: O autor do evento diverge do emissor do CT-e'
-        ],
-        '633' => [
-            'type' => 0,
-            'message' => 'Rejeição: O autor do evento não é um órgão autorizado a gerar o evento'
-        ],
-        '634' => [
-            'type' => 0,
-            'message' => 'Rejeição: A data do evento não pode ser menor que a data de emissão do CT-e'
-        ],
-        '635' => [
-            'type' => 0,
-            'message' => 'Rejeição: A data do evento não pode ser maior que a data do processamento'
-        ],
-        '636' => [
-            'type' => 0,
-            'message' => 'Rejeição: O número sequencial do evento é maior que o permitido'
-        ],
-        '637' => [
-            'type' => 0,
-            'message' => 'Rejeição: A data do evento não pode ser menor que a data de autorização do CT-e'
-        ],
-        '638' => [
-            'type' => 0,
-            'message' => 'Rejeição: Já existe CT-e autorizado com esta numeração'
-        ],
-        '639' => [
-            'type' => 0,
-            'message' => 'Rejeição: Existe EPEC emitido há mais de 7 dias (168h) sem a emissão do CT-e no ambiente normal de autorização'
-        ],
-        '640' => [
-            'type' => 0,
-            'message' => 'Rejeição: Tipo de emissão do CT-e difere de EPEC com EPEC autorizado na SVC-XX para este documento.'
-        ],
-        '641' => [
-            'type' => 0,
-            'message' => 'Rejeição: O evento prévio deste CT-e não foi autorizado na SVC ou ainda não foi sincronizado.[OBS: Em caso de atraso na sincronização, favor aguardar alguns instantes para nova tentativa de transmissão]'
-        ],
-        '642' => [
-            'type' => 0,
-            'message' => 'Rejeição: Os valores de ICMS, Prestação e Total da Carga do CT-e devem ser iguais aos informados no EPEC'
-        ],
-        '643' => [
-            'type' => 0,
-            'message' => 'Rejeição: As informações do tomador de serviço do CT-e devem ser iguais as informadas no EPEC'
-        ],
-        '644' => [
-            'type' => 0,
-            'message' => 'Rejeição: A informação do modal do CT-e deve ser igual a informada no EPEC'
-        ],
-        '645' => [
-            'type' => 0,
-            'message' => 'Rejeição: A UF de início e fim de prestação do CT-e devem ser iguais as informadas no EPEC.'
-        ],
-        '646' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e emitido em ambiente de homologação com Razão Social do remetente diferente de CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL'
-        ],
-        '647' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e emitido em ambiente de homologação com Razão Social do expedidor diferente de CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL'
-        ],
-        '648' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e emitido em ambiente de homologação com Razão Social do recebedor diferente de CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL'
-        ],
-        '649' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e emitido em ambiente de homologação com Razão Social do destinatário diferente de CT-E EMITIDO EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL'
-        ],
-        '650' => [
-            'type' => 0,
-            'message' => 'Rejeição: Valor total do serviço superior ao limite permitido (R$ 9.999.999,99)'
-        ],
-        '651' => [
-            'type' => 0,
-            'message' => 'Rejeição: Referenciar o CT-e Multimodal que foi emitido pelo OTM'
-        ],
-        '652' => [
-            'type' => 0,
-            'message' => 'Rejeição: NF-e não pode estar cancelada ou denegada'
-        ],
-        '653' => [
-            'type' => 0,
-            'message' => 'Rejeição: Tipo de evento não é permitido em ambiente de autorização Normal'
-        ],
-        '654' => [
-            'type' => 0,
-            'message' => 'Rejeição: Tipo de evento não é permitido em ambiente de autorização SVC'
-        ],
-        '655' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e complementado deve estar com a situação autorizada (não pode estar cancelado ou denegado)'
-        ],
-        '656' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e complementado não pode ter sido anulado'
-        ],
-        '657' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e complementado não pode ter sido substituído'
-        ],
-        '658' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e objeto da anulação não pode ter sido complementado'
-        ],
-        '659' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e substituído não pode ter sido complementado'
-        ],
-        '660' => [
-            'type' => 0,
-            'message' => 'Rejeição: Vedado o cancelamento se possuir CT-e Complementar associado'
-        ],
-        '661' => [
-            'type' => 0,
-            'message' => 'Rejeição: NF-e inexistente na base de dados da SEFAZ'
-        ],
-        '662' => [
-            'type' => 0,
-            'message' => 'Rejeição: NF-e com diferença de Chave de Acesso'
-        ],
-        '664' => [
-            'type' => 0,
-            'message' => 'Rejeição: Evento não permitido para CT-e Substituído/Anulado'
-        ],
-        '667' => [
-            'type' => 0,
-            'message' => 'Rejeição: CNPJ-Base do Tomador deve ser igual ao CNPJ-Base do Emitente do CT-e Multimodal[chCTe: 99999999999999999999999999999999999999999999]'
-        ],
-        '668' => [
-            'type' => 0,
-            'message' => 'Rejeição: CPF do funcionário do registro de passagem inválido'
-        ],
-        '669' => [
-            'type' => 0,
-            'message' => 'Rejeição: Segundo código de barras deve ser informado para CT-e emitido em contingência FS-DA'
-        ],
-        '670' => [
-            'type' => 0,
-            'message' => 'Rejeição: Série utilizada não permitida no webservice'
-        ],
-        '671' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e complementado no CT-e Complementar com diferença de Chave de Acesso[chCTe: 99999999999999999999999999999999999999999999][nProt:999999999999999][dhAut: AAAA-MM-DDTHH:MM:SS TZD].'
-        ],
-        '672' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e de Anulação com diferença de Chave de Acesso[chCTe: 99999999999999999999999999999999999999999999] [nProt:999999999999999][dhAut: AAAA-MM-DDTHH:MM:SS TZD].'
-        ],
-        '673' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e Substituído com diferença de Chave de Acesso[chCTe: 99999999999999999999999999999999999999999999][nProt:999999999999999][dhAut: AAAA-MM-DDTHH:MM:SS TZD]'
-        ],
-        '674' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e Objeto de Anulação com diferença de Chave de Acesso[chCTe: 99999999999999999999999999999999999999999999][nProt:999999999999999][dhAut: AAAA-MM-DDTHH:MM:SS TZD]'
-        ],
-        '675' => [
-            'type' => 0,
-            'message' => 'Rejeição: Valor do imposto não corresponde à base de cálculo X alíquota'
-        ],
-        '676' => [
-            'type' => 0,
-            'message' => 'Rejeição: CFOP informado inválido'
-        ],
-        '677' => [
-            'type' => 0,
-            'message' => 'Rejeição: Órgão de recepção do evento inválido'
-        ],
-        '678' => [
-            'type' => 0,
-            'message' => 'Rejeição: Consumo Indevido[Descrição: XXXXXXXXXXXXXXXXXXXXXXXXXXXX]'
-        ],
-        '679' => [
-            'type' => 0,
-            'message' => 'Rejeição: O modal do CT-e deve ser Multimodal para Evento Registros do Multimodal'
-        ],
-        '680' => [
-            'type' => 0,
-            'message' => 'Rejeição: Tipo de Emissão diferente de EPEC'
-        ],
-        '681' => [
-            'type' => 0,
-            'message' => 'Rejeição: Informação não pode ser alterada por carta de correção'
-        ],
-        '682' => [
-            'type' => 0,
-            'message' => 'Rejeição: Já existe pedido de inutilização com a mesma faixa de inutilização [nProt:999999999999999]'
-        ],
-        '683' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de MDF-e inválida (Ano < 2012 ou Ano maior que Ano corrente)'
-        ],
-        '684' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de MDF-e inválida (Mês = 0 ou Mês > 12)'
-        ],
-        '685' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de MDF-e inválida (CNPJ zerado ou digito inválido)'
-        ],
-        '686' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de MDF-e inválida (modelo diferente de 58)'
-        ],
-        '687' => [
-            'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de MDF-e inválida (número MDF = 0)'
-        ],
-        '690' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e Multimodal referenciado inexistente na base de dados da SEFAZ[chCTe: 99999999999999999999999999999999999999999999]'
-        ],
-        '691' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e Multimodal referenciado existe com diferença de chave de acesso[chCTe: 99999999999999999999999999999999999999999999][nProt:999999999999999][dhAut: AAAA-MM-DDTHH:MM:SS TZD]'
-        ],
-        '692' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e Multimodal referenciado não pode estar cancelado ou denegado[chCTe: 99999999999999999999999999999999999999999999]'
-        ],
-        '693' => [
-            'type' => 0,
-            'message' => 'Rejeição: Grupo Documentos Transportados deve ser informado para tipo de serviço diferente de redespacho intermediário e serviço vinculado a multimodal'
-        ],
-        '694' => [
-            'type' => 0,
-            'message' => 'Rejeição: Grupo Documentos Transportados não pode ser informado para tipo de serviço redespacho intermediário e serviço vinculado a multimodal'
-        ],
-        '695' => [
-            'type' => 0,
-            'message' => 'Rejeição: CT-e com emissão anterior ao evento prévio (EPEC)'
-        ],
-        '696' => [
-            'type' => 0,
-            'message' => 'Rejeição: Existe EPEC aguardando CT-e nessa faixa de numeração'
-        ],
-        '697' => [
-            'type' => 0,
-            'message' => 'Rejeição: Data de emissão do CT-e deve ser menor igual à data de autorização da EPEC'
-        ],
-        '698' => [
-            'type' => 0,
-            'message' => 'Rejeição: Evento Prévio autorizado há mais de 7 dias (168 horas)'
-        ],
-        '699' => [
+        '323 	' => [
             'type' => 0,
             'message' => 'Rejeição: CNPJ autorizado para download inválido'
         ],
-        '700' => [
+        '324 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CNPJ do destinatário já autorizado para download'
+        ],
+        '325 	' => [
             'type' => 0,
             'message' => 'Rejeição: CPF autorizado para download inválido'
         ],
-        '701' => [
+        '326 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Dígito Verificador inválido na Chave de acesso de CT-e da Ferrovia de Origem'
+            'message' => 'Rejeição: CPF do destinatário já autorizado para download'
         ],
-        '702' => [
+        '327 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e da Ferrovia de Origem inválida (Ano < 2009 ou Ano maior que Ano corrente)'
+            'message' => 'Rejeição: CFOP inválido para NF-e com finalidade de devolução de mercadoria'
         ],
-        '703' => [
+        '328 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e da Ferrovia de Origem inválida (Mês = 0 ou Mês > 12)'
+            'message' => '329 Rejeição: CFOP de devolução de mercadoria para NF-e que não tem finalidade de devolução de mercadoria Rejeição: Número da DI /DSI inválido'
         ],
-        '704' => [
+        '330 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e da Ferrovia de Origem inválida (CNPJ zerado ou digito inválido)'
+            'message' => 'Rejeição: Informar o Valor da AFRMM na importação por via marítima'
         ],
-        '705' => [
+        '331 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e da Ferrovia de Origem inválida (modelo diferente de 57)'
+            'message' => 'Rejeição: Informar o CNPJ do adquirente ou do encomendante nesta forma de importação'
         ],
-        '706' => [
+        '332 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e da Ferrovia de Origem inválida (número CT = 0)'
+            'message' => 'Rejeição: CNPJ do adquirente ou do encomendante da importação inválido'
         ],
-        '707' => [
+        '333 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e da Ferrovia de Origem inválida (Tipo de emissão inválido)'
+            'message' => 'Rejeição: Informar a UF do adquirente ou do encomendante nesta forma de importação'
         ],
-        '708' => [
+        '334 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e da Ferrovia de Origem inválida (UF inválida)'
+            'message' => 'Rejeição: Número do processo de drawback não informado na importação'
         ],
-        '709' => [
+        '335 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e da Ferrovia de Origem referenciado inexistente na base de dados da SEFAZ'
+            'message' => 'Rejeição: Número do processo de drawback na importação inválido'
         ],
-        '710' => [
+        '336 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e da Ferrovia de Origem referenciado existe com diferença de chave de acesso'
+            'message' => 'Rejeição: Informado o grupo de exportação no item para CFOP que não é de exportação'
         ],
-        '711' => [
+        '337 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e da Ferrovia de Origem referenciado não pode estar cancelado ou denegado'
+            'message' => 'Rejeição: Não informado o grupo de exportação no item'
         ],
-        '712' => [
+        '338 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Código de Município diverge da UF de localização do emitente'
+            'message' => 'Rejeição: Número do processo de drawback não informado na exportação'
         ],
-        '713' => [
+        '339 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Município do Emitente inexistente'
+            'message' => 'Rejeição: Número do processo de drawback na exportação inválido'
         ],
-        '714' => [
+        '340 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de CT-e duplicada na relação de CT-e Multimodal'
+            'message' => 'Rejeição: Não informado o grupo de exportação indireta no item'
         ],
-        '715' => [
+        '341 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Documento autorizado ao XML duplicado no CT-e'
+            'message' => 'Rejeição: Número do registro de exportação inválido'
         ],
-        '716' => [
+        '342 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do Remetente não informada'
+            'message' => 'Rejeição: Chave de Acesso informada na Exportação Indireta com DV inválido'
         ],
-        '717' => [
+        '343 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do Expedidor não informada'
+            'message' => 'Rejeição: Modelo da NF-e informada na Exportação Indireta diferente de 55'
         ],
-        '718' => [
+        '344 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do Recebedor não informada'
+            'message' => 'Rejeição: Duplicidade de NF-e informada na Exportação Indireta (Chave de Acesso informada mais de uma vez) Rejeição: Chave de Acesso informada na Exportação Indireta não consta como NF-e referenciada'
         ],
-        '719' => [
+        '346 	' => [
             'type' => 0,
-            'message' => 'Rejeição: IE do Tomador não informada'
+            'message' => 'Rejeição: Somatório das quantidades informadas na Exportação Indireta não corresponde a quantidade total do item'
         ],
-        '720' => [
+        '347 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e EPEC deve ser do tipo Normal'
+            'message' => 'Rejeição: Descrição do Combustível diverge da descrição adotada pela ANP'
         ],
-        '721' => [
+        '348 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso inválida (modelo diferente de 67)'
+            'message' => 'Rejeição: NFC-e com grupo RECOPI'
         ],
-        '722' => [
+        '349 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Tomador do serviço deve ser remetente ou destinatário para CT-e Globalizado'
+            'message' => 'Rejeição: Número RECOPI não informado'
         ],
-        '723' => [
+        '350 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e Globalizado deve conter apenas NF-e nos documentos transportados'
+            'message' => 'Rejeição: Número RECOPI inválido'
         ],
-        '724' => [
+        '351 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e Globalizado deve conter NF-e com CNPJ diferentes para múltiplos remetentes'
+            'message' => 'Rejeição: Valor do ICMS da Operação no CST=51 difere do produto BC e Alíquota'
         ],
-        '725' => [
+        '352 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Razão Social do Remetente do CT-e Globalizado inválido'
+            'message' => 'Rejeição: Valor do ICMS Diferido no CST=51 difere do produto Valor ICMS Operação e percentual diferimento'
         ],
-        '726' => [
+        '355 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Razão Social do Destinatário do CT-e Globalizado inválido'
+            'message' => 'Rejeição: Valor do ICMS no CST=51 não corresponde a diferença do ICMS operação e ICMS diferido'
         ],
-        '727' => [
+        '354 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ do remetente do CT-e Globalizado deve ser o mesmo do emitente do CT- e'
+            'message' => 'Rejeição: Informado grupo de devolução de tributos para NF-e que não tem finalidade de devolução de mercadoria'
         ],
-        '728' => [
+        '355 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ do destinatário do CT-e Globalizado deve ser o mesmo do emitente do CT-e'
+            'message' => 'Rejeição: Informar o local de saída do Pais no caso da exportação'
         ],
-        '729' => [
+        '356 	' => [
             'type' => 0,
-            'message' => 'Rejeição: NF-e de múltiplos emitentes informadas nos documentos transportados sem indicador de CT-e Globalizado'
+            'message' => 'Rejeição: Informar o local de saída do Pais somente no caso da exportação'
         ],
-        '730' => [
+        '357 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Razão Social inválida para remetente/destinatário sem indicador de CT-e Globalizado'
+            'message' => 'Rejeição: Chave de Acesso do grupo de Exportação Indireta inexistente [nRef: xxx]'
         ],
-        '731' => [
+        '358 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Consulta a uma Chave de Acesso muito antiga'
+            'message' => 'Rejeição: Chave de Acesso do grupo de Exportação Indireta cancelada ou denegada [nRef: xxx]'
         ],
-        '732' => [
+        '359 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso inválida (modelo diferente de 57)'
+            'message' => 'Rejeição: NF-e de venda a Órgão Público sem informar a Nota de Empenho'
         ],
-        '733' => [
+        '360 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ do documento anterior deve ser o mesmo indicado no grupo emiDocAnt'
+            'message' => 'Rejeição: NF-e com Nota de Empenho inválida para a UF.'
         ],
-        '734' => [
+        '361 	' => [
             'type' => 0,
-            'message' => 'Rejeição: As NF-e transportadas do CT-e substituto devem ser iguais às informadas no CT-e substituído'
+            'message' => 'Rejeição: NF-e com Nota de Empenho inexistente na UF.'
         ],
-        '735' => [
+        '362 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e de anulação para CT-e com tomador contribuinte exige evento de Prestação de Serviço em Desacordo'
+            'message' => 'Rejeição: Venda de combustível sem informação do Transportador'
         ],
-        '736' => [
+        '364 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Existe CT-e de anulação autorizado há mais de 15 dias sem a autorização do CT-e Substituto'
+            'message' => 'Rejeição: Total do valor da dedução do ISS difere do somatório dos itens'
         ],
-        '738' => [
+        '365 	' => [
             'type' => 0,
-            'message' => 'Rejeição: A indicação do tomador do CT-e de substituição deve ser igual a do CT-e substituído'
+            'message' => 'Rejeição: Total de outras retenções difere do somatório dos itens'
         ],
-        '743' => [
+        '366 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e Globalizado não pode ser utilizado para operação interestadual'
+            'message' => 'Rejeição: Total do desconto incondicionado ISS difere do somatório dos itens'
         ],
-        '744' => [
+        '367 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e Globalizado para tomador remetente com NF-e de emitentes diferentes'
+            'message' => 'Rejeição: Total do desconto condicionado ISS difere do somatório dos itens'
         ],
-        '745' => [
+        '368 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ base do tomador deve ser igual ao CNPJ base indicado no grupo emiDocAnt'
+            'message' => 'Rejeição: Total de ISS retido difere do somatório dos itens'
         ],
-        '746' => [
+        '369 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Tipo de Serviço inválido para o tomador informado'
+            'message' => 'Rejeição: Não informado o grupo avulsa na emissão pelo Fisco'
         ],
-        '747' => [
+        '370 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Documentos anteriores informados para Tipo de Serviço Normal'
+            'message' => 'Rejeição: Nota Fiscal Avulsa com tipo de emissão inválido'
         ],
-        '748' => [
+        '401 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e referenciado em documentos anteriores inexistente na base de dados da SEFAZ'
+            'message' => 'Rejeição: CPF do remetente inválido'
         ],
-        '749' => [
+        '402 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e referenciado em documentos anteriores existe com diferença de chave de acesso'
+            'message' => 'Rejeição: XML da área de dados com codificação diferente de UTF-8'
         ],
-        '750' => [
+        '403 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e referenciado em documentos anteriores não pode estar cancelado ou denegado'
+            'message' => 'Rejeição: O grupo de informações da NF-e avulsa é de uso exclusivo do Fisco'
         ],
-        '751' => [
+        '404 	' => [
             'type' => 0,
-            'message' => 'Rejeição: UF de início e Fim da prestação devem estar preenchidas para Transporte de Pessoas'
+            'message' => 'Rejeição: Uso de prefixo de namespace não permitido'
         ],
-        '752' => [
+        '405 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Município de início e Fim da prestação devem estar preenchidos para Transporte de Pessoas'
+            'message' => 'Rejeição: Código do país do emitente: dígito inválido'
         ],
-        '753' => [
+        '406 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Percurso inválido'
+            'message' => 'Rejeição: Código do país do destinatário: dígito inválido'
         ],
-        '754' => [
+        '407 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Os documentos referenciados devem estar preenchidos para excesso de bagagem'
+            'message' => 'Rejeição: O CPF só pode ser informado no campo emitente para a NF-e avulsa'
         ],
-        '755' => [
+        '408 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Autor do evento prestação do serviço em desacordo deve ser o tomador do serviço do CT-e'
+            'message' => 'Rejeição: Evento não disponível para Autor pessoa física'
         ],
-        '756' => [
+        '409 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Data de emissão do CT-e deve ser igual à data de emissão da EPEC'
+            'message' => 'Rejeição: Campo cUF inexistente no elemento nfeCabecMsg do SOAP Header'
         ],
-        '757' => [
+        '410 	' => [
             'type' => 0,
-            'message' => 'Rejeição: O tomador do serviço deve estar informado para Transporte de Pessoas e Valores'
+            'message' => 'Rejeição: UF informada no campo cUF não é atendida pelo Web Service'
         ],
-        '758' => [
+        '411 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Existe CT-e OS de Transporte de Valores autorizado há mais de 45 dias sem informar as GTV[chCTe: 99999999999999999999999999999999999999999999]'
+            'message' => 'Rejeição: Campo versaoDados inexistente no elemento nfeCabecMsg do SOAP Header'
         ],
-        '760' => [
+        '416 	' => [
             'type' => 0,
-            'message' => 'Rejeição: INSS deve ser preenchido para tomador pessoa jurídica'
+            'message' => 'Rejeição: Falha na descompactação da área de dados'
         ],
-        '761' => [
+        '417 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Dígito Verificador inválido na Chave de acesso de CT-e objeto da anulação'
+            'message' => 'Rejeição: Total do ICMS superior ao valor limite estabelecido'
         ],
-        '762' => [
+        '418 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e objeto da anulação inválida (Ano < 2009 ou Ano maior que Ano corrente)'
+            'message' => 'Rejeição: Total do ICMS ST superior ao valor limite estabelecido'
         ],
-        '763' => [
+        '420 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e objeto da anulação inválida (Mês = 0 ou Mês > 12)'
+            'message' => 'Rejeição: Cancelamento para NF-e já cancelada'
         ],
-        '764' => [
+        '450 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e objeto da anulação inválida (CNPJ zerado ou digito inválido)'
+            'message' => 'Rejeição: Modelo da NF-e diferente de 55'
         ],
-        '765' => [
+        '451 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e objeto da anulação inválida (modelo diferente de 57)'
+            'message' => 'Rejeição: Processo de emissão informado inválido'
         ],
-        '766' => [
+        '452 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e objeto da anulação inválida (número CT = 0)'
+            'message' => 'Rejeição: Tipo Autorizador do Recibo diverge do Órgão Autorizador'
         ],
-        '767' => [
+        '453 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e objeto da anulação inválida (Tipo de emissão invalido)'
+            'message' => 'Rejeição: Ano de inutilização não pode ser superior ao Ano atual'
         ],
-        '768' => [
+        '454 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e objeto da anulação inválida (UF inválida)'
+            'message' => 'Rejeição: Ano de inutilização não pode ser inferior a 2006'
         ],
-        '769' => [
+        '455 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Dígito Verificador inválido na Chave de acesso de CT-e substituído'
+            'message' => 'Rejeição: Órgão Autor do evento diferente da UF da Chave de Acesso'
         ],
-        '770' => [
+        '461 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e substituído inválida (Ano < 2009 ou Ano maior que Ano corrente)'
+            'message' => 'Rejeição: Informado percentual de Gás Natural na mistura para produto diferente de GLP'
         ],
-        '771' => [
+        '465 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e substituído inválida (Mês = 0 ou Mês > 12)'
+            'message' => 'Rejeição: Número de Controle da FCI inexistente'
         ],
-        '772' => [
+        '466 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e substituído inválida (CNPJ zerado ou digito inválido)'
+            'message' => 'Rejeição: Evento com Tipo de Autor incompatível'
         ],
-        '773' => [
+        '467 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e substituído inválida (modelo diferente de 57)'
+            'message' => 'Rejeição: Dados da NF-e divergentes do EPEC'
         ],
-        '774' => [
+        '468 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e substituído inválida (número CT = 0)'
+            'message' => 'Rejeição: NF-e com Tipo Emissão = 4, sem EPEC correspondente'
         ],
-        '775' => [
+        '471 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e substituído inválida (Tipo de emissão inválido)'
+            'message' => 'Rejeição: Informado NCM=00 indevidamente'
         ],
-        '776' => [
+        '476 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e substituído inválida (UF inválida)'
+            'message' => 'Rejeição: Código da UF diverge da UF da primeira NF-e do Lote'
         ],
-        '777' => [
+        '477 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Dígito Verificador inválido na Chave de acesso de CT-e complementado'
+            'message' => 'Rejeição: Código do órgão diverge do órgão do primeiro evento do Lote'
         ],
-        '778' => [
+        '478 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e complementado inválida (Ano < 2009 ou Ano maior que Ano corrente)'
+            'message' => 'Rejeição: Local da entrega não informado para faturamento direto de veículos novos'
         ],
-        '779' => [
+        '484 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e complementado inválida (Mês = 0 ou Mês > 12)'
+            'message' => 'Rejeição: Chave de Acesso com tipo de emissão diferente de 4 (posição 35 da Chave de Acesso)'
         ],
-        '780' => [
+        '485 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e complementado inválida (CNPJ zerado ou digito inválido)'
+            'message' => 'Rejeição: Duplicidade de numeração do EPEC (Modelo, CNPJ, Série e Número)'
         ],
-        '781' => [
+        '489 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e complementado inválida (modelo diferente de 57)'
+            'message' => 'Rejeição: CNPJ informado inválido (DV ou zeros)'
         ],
-        '782' => [
+        '490 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e complementado inválida (número CT = 0)'
+            'message' => 'Rejeição: CPF informado inválido (DV ou zeros)'
         ],
-        '783' => [
+        '491 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e complementado inválida (Tipo de emissão inválido)'
+            'message' => 'Rejeição: O tpEvento informado inválido'
         ],
-        '784' => [
+        '492 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e complementado inválida (UF inválida)'
+            'message' => 'Rejeição: O verEvento informado inválido'
         ],
-        '785' => [
+        '493 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Chave de acesso de CT-e complementado inválida (modelo diferente de 67)'
+            'message' => 'Rejeição: Evento não atende o Schema XML específico'
         ],
-        '786' => [
+        '494 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Grupo de informações da partilha com a UF de fim da prestação deve estar preenchido'
+            'message' => 'Rejeição: Chave de Acesso inexistente'
         ],
-        '787' => [
+        '501 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Data do evento de Prestação do Serviço em desacordo deve ocorrer em até 45 dias da autorização do CT-e'
+            'message' => 'Rejeição: Pedido de Cancelamento intempestivo (NF-e autorizada a mais de 7 dias)'
         ],
-        '788' => [
+        '502 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CT-e em situação que impede liberar prazo de cancelamento'
+            'message' => 'Rejeição: Erro na Chave de Acesso - Campo Id não corresponde à concatenação dos campos correspondentes'
         ],
-        '789' => [
+        '503 	' => [
             'type' => 0,
-            'message' => 'Rejeição: UF não tem permissão de liberar prazo de cancelamento para o CT-e informado'
+            'message' => 'Rejeição: Série utilizada fora da faixa permitida no SCAN (900-999)'
         ],
-        '790' => [
+        '504 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Data de início da vigência inferior a data atual'
+            'message' => 'Rejeição: Data de Entrada/Saída posterior ao permitido'
         ],
-        '791' => [
+        '505 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Data de fim da vigência superior a 6 meses da data atual'
+            'message' => 'Rejeição: Data de Entrada/Saída anterior ao permitido'
         ],
-        '792' => [
+        '506 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Data de fim da vigência inferior a data de início da vigência'
+            'message' => 'Rejeição: Data de Saída menor que a Data de Emissão'
         ],
-        '793' => [
+        '507 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Evento de Liberação de prazo de cancelamento inexistente'
+            'message' => 'Rejeição: O CNPJ do destinatário/remetente não deve ser informado em operação com o exterior'
         ],
-        '794' => [
+        '508 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Evento de Liberação de prazo de cancelamento já está anulado'
+            'message' => 'Rejeição: CNPJ do destinatário com conteúdo nulo só é válido em operação com exterior'
         ],
-        '795' => [
+        '509 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Já existe CT-e autorizado para a EPEC'
+            'message' => 'Rejeição: Informado código de município diferente de “9999999” para operação com o exterior'
         ],
-        '796' => [
+        '510 	' => [
             'type' => 0,
-            'message' => 'Rejeição: UF não tem permissão de liberar EPEC para o CT-e informado'
+            'message' => 'Rejeição: Operação com Exterior e Código País destinatário é 1058 (Brasil) ou não informado'
         ],
-        '797' => [
+        '511 	' => [
             'type' => 0,
-            'message' => 'Rejeição: A EPEC deve estar em situação de bloqueio para ser liberada pelo evento'
+            'message' => 'Rejeição: Não é de Operação com Exterior e Código País destinatário difere de 1058 (Brasil)'
         ],
-        '798' => [
+        '512 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Os dados específicos do modal devem estar preenchidos para Transporte de Pessoas e Excesso de Bagagem'
+            'message' => 'Rejeição: CNPJ do Local de Retirada inválido'
         ],
-        '799' => [
+        '513 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Identificação do tomador utilizada em outro papel no CT-e (CNPJ/CPF ou IE)'
+            'message' => 'Rejeição: Código Município do Local de Retirada deve ser 9999999 para UF retirada = EX'
         ],
-        '800' => [
+        '514 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ/CPF do remetente do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: CNPJ do Local de Entrega inválido'
         ],
-        '801' => [
+        '515 	' => [
             'type' => 0,
-            'message' => 'Rejeição: CNPJ/CPF do destinatário do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: Código Município do Local de Entrega deve ser 9999999 para UF entrega = EX'
         ],
-        '802' => [
+        '516 	' => [
             'type' => 0,
-            'message' => 'Rejeição: O CNPJ/CPF do expedidor do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: Falha no schema XML - inexiste a tag raiz esperada para a mensagem'
         ],
-        '803' => [
+        '517 	' => [
             'type' => 0,
-            'message' => 'Rejeição: O CNPJ/CPF do recebedor do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: Falha no schema XML - inexiste atributo versao na tag raiz da mensagem'
         ],
-        '804' => [
+        '518 	' => [
             'type' => 0,
-            'message' => 'Rejeição: O CNPJ/CPF do tomador do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: CFOP de entrada para NF-e de saída'
         ],
-        '805' => [
+        '519 	' => [
             'type' => 0,
-            'message' => 'Rejeição: A IE do emitente do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: CFOP de saída para NF-e de entrada'
         ],
-        '806' => [
+        '520 	' => [
             'type' => 0,
-            'message' => 'Rejeição: A IE do remetente do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: CFOP de Operação com Exterior e UF destinatário difere de EX'
         ],
-        '807' => [
+        '521 	' => [
             'type' => 0,
-            'message' => 'Rejeição: A IE do destinatário do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: CFOP de Operação Estadual e UF do emitente difere da UF do destinatário para destinatário contribuinte do ICMS.'
         ],
-        '808' => [
+        '522 	' => [
             'type' => 0,
-            'message' => 'Rejeição: A IE do expedidor do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: CFOP de Operação Estadual e UF emitente difere da UF remetente para remetente contribuinte do ICMS.'
         ],
-        '809' => [
+        '523 	' => [
             'type' => 0,
-            'message' => 'Rejeição: A IE do recebedor do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: CFOP não é de Operação Estadual e UF emitente igual a UF destinatário.'
         ],
-        '810' => [
+        '524 	' => [
             'type' => 0,
-            'message' => 'Rejeição: A IE do tomador do CT-e complementar deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: CFOP de Operação com Exterior e não informado NCM'
         ],
-        '811' => [
+        '525 	' => [
             'type' => 0,
-            'message' => 'Rejeição: A UF de início da prestação deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: CFOP de Importação e não informado dados da DI'
         ],
-        '812' => [
+        '527 	' => [
             'type' => 0,
-            'message' => 'Rejeição: A UF de fim da prestação deve ser igual ao informado no CT-e complementado'
+            'message' => 'Rejeição: Operação de Exportação com informação de ICMS incompatível'
         ],
-        '813' => [
+        '528 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Tipo de Documento inválido para operação interestadual'
+            'message' => 'Rejeição: Valor do ICMS difere do produto BC e Alíquota'
         ],
-        '999' => [
+        '529 	' => [
             'type' => 0,
-            'message' => 'Rejeição: Erro não catalogado (informar a mensagem de erro capturado no tratamento da exceção)'
+            'message' => 'Rejeição: NCM de informação obrigatória para produto tributado pelo IPI'
         ],
-        '301' => [
+        '530 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Operação com tributação de ISSQN sem informar a Inscrição Municipal'
+        ],
+        '531 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total da BC ICMS difere do somatório dos itens'
+        ],
+        '532 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do ICMS difere do somatório dos itens'
+        ],
+        '533 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total da BC ICMS-ST difere do somatório dos itens'
+        ],
+        '534 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do ICMS-ST difere do somatório dos itens'
+        ],
+        '535 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do Frete difere do somatório dos itens'
+        ],
+        '536 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do Seguro difere do somatório dos itens'
+        ],
+        '537 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do Desconto difere do somatório dos itens'
+        ],
+        '538 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do IPI difere do somatório dos itens'
+        ],
+        '539 	' => [
+            'type' => 0,
+            'message' => 'Duplicidade de NF-e com diferença na Chave de Acesso [chNFe:99999999999999999999999999999999999999999999][nRec 999999999999999]'
+        ],
+        '540 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CPF do Local de Retirada inválido'
+        ],
+        '541 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CPF do Local de Entrega inválido'
+        ],
+        '542 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CNPJ do Transportador inválido'
+        ],
+        '543 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CPF do Transportador inválido'
+        ],
+        '544 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: IE do Transportador inválida'
+        ],
+        '545 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Falha no schema XML - versão informada na versaoDados do SOAPHeader diverge da versão da mensagem'
+        ],
+        '546 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Erro na Chave de Acesso - Campo Id - falta a literal NFe'
+        ],
+        '547 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Dígito Verificador da Chave de Acesso da NF-e Referenciada inválido'
+        ],
+        '548 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CNPJ da NF referenciada inválido.'
+        ],
+        '549 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CNPJ da NF referenciada de produtor inválido.'
+        ],
+        '550 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CPF da NF referenciada de produtor inválido.'
+        ],
+        '551 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: IE da NF referenciada de produtor inválido.'
+        ],
+        '552 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Dígito Verificador da Chave de Acesso do CT-e Referenciado inválido'
+        ],
+        '553 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Tipo autorizador do recibo diverge do Órgão Autorizador.'
+        ],
+        '554 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Série difere da faixa 0-899'
+        ],
+        '555 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Tipo autorizador do protocolo diverge do Órgão Autorizador.'
+        ],
+        '556 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Justificativa de entrada em contingência não deve ser informada para tipo de emissão normal.'
+        ],
+        '557 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: A Justificativa de entrada em contingência deve ser informada.'
+        ],
+        '558 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Data de entrada em contingência posterior a data de recebimento.'
+        ],
+        '559 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: UF do Transportador não informada'
+        ],
+        '560 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CNPJ base do emitente difere do CNPJ base da primeira NF-e do lote recebido'
+        ],
+        '561 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Mês de Emissão informado na Chave de Acesso difere do Mês de Emissão da NF-e'
+        ],
+        '562 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Código Numérico informado na Chave de Acesso difere do Código Numérico da NF-e [chNFe:99999999999999999999999999999999999999999999]'
+        ],
+        '563 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Já existe pedido de Inutilização com a mesma faixa de inutilização'
+        ],
+        '564 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do Produto / Serviço difere do somatório dos itens'
+        ],
+        '565 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Falha no schema XML - inexiste a tag raiz esperada para o lote de NF-e'
+        ],
+        '567 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Falha no schema XML - versão informada na versaoDados do SOAPHeader diverge da versão do lote de NF-e'
+        ],
+        '568 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Falha no schema XML - inexiste atributo versao na tag raiz do lote de NF-e'
+        ],
+        '569 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Data de entrada em contingência muito atrasada'
+        ],
+        '570 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Tipo de Emissão 3, 6 ou 7 só é válido nas contingências SCAN/SVC'
+        ],
+        '571 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: O tpEmis informado diferente de 3 para contingência SCAN'
+        ],
+        '572 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Erro Atributo ID do evento não corresponde a concatenação dos campos (“ID” + tpEvento + chNFe + nSeqEvento)'
+        ],
+        '573 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Duplicidade de Evento'
+        ],
+        '574 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: O autor do evento diverge do emissor da NF-e'
+        ],
+        '575 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: O autor do evento diverge do destinatário da NF-e'
+        ],
+        '576 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: O autor do evento não é um órgão autorizado a gerar o evento'
+        ],
+        '577 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: A data do evento não pode ser menor que a data de emissão da NF-e'
+        ],
+        '578 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: A data do evento não pode ser maior que a data do processamento'
+        ],
+        '579 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: A data do evento não pode ser menor que a data de autorização para NF-e não emitida em contingência'
+        ],
+        '580 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: O evento exige uma NF-e autorizada'
+        ],
+        '587 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Usar somente o namespace padrão da NF-e'
+        ],
+        '588 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Não é permitida a presença de caracteres de edição no início/fim da mensagem ou entre as tags da mensagem'
+        ],
+        '589 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Número do NSU informado superior ao maior NSU da base de dados da SEFAZ'
+        ],
+        '590 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Informado CST para emissor do Simples Nacional (CRT=1)'
+        ],
+        '591 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Informado CSOSN para emissor que não é do Simples Nacional (CRT diferente de 1)'
+        ],
+        '592 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: A NF-e deve ter pelo menos um item de produto sujeito ao ICMS'
+        ],
+        '593 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CNPJ-Base consultado difere do CNPJ-Base do Certificado Digital'
+        ],
+        '594 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: O número de sequencia do evento informado é maior que o permitido'
+        ],
+        '595 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Obrigatória a informação da justificativa do evento.'
+        ],
+        '596 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Evento apresentado fora do prazo: [prazo vigente]'
+        ],
+        '597 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CFOP de Importação e não informado dados de IPI'
+        ],
+        '598 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e emitida em ambiente de homologação com Razão Social do destinatário diferente de NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL'
+        ],
+        '599 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CFOP de Importação e não informado dados de II'
+        ],
+        '601 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do II difere do somatório dos itens'
+        ],
+        '602 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do PIS difere do somatório dos itens sujeitos ao ICMS'
+        ],
+        '603 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do COFINS difere do somatório dos itens sujeitos ao ICMS'
+        ],
+        '604 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do vOutro difere do somatório dos itens'
+        ],
+        '605 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do vISS difere do somatório do vProd dos itens sujeitos ao ISSQN'
+        ],
+        '606 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do vBC do ISS difere do somatório dos itens'
+        ],
+        '607 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do ISS difere do somatório dos itens'
+        ],
+        '608 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do PIS difere do somatório dos itens sujeitos ao ISSQN'
+        ],
+        '609 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do COFINS difere do somatório dos itens sujeitos ao ISSQN'
+        ],
+        '610 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total da NF difere do somatório dos Valores compõe o valor Total da NF.'
+        ],
+        '611 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: cEAN inválido'
+        ],
+        '612 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: cEANTrib inválido'
+        ],
+        '613 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Chave de Acesso difere da existente em BD'
+        ],
+        '614 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Chave de Acesso inválida (Código UF inválido)'
+        ],
+        '615 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Chave de Acesso inválida (Ano menor que 06 ou Ano maior que Ano corrente)'
+        ],
+        '616 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Chave de Acesso inválida (Mês menor que 1 ou Mês maior que 12)'
+        ],
+        '617 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Chave de Acesso inválida (CNPJ zerado ou dígito inválido)'
+        ],
+        '618 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Chave de Acesso inválida (modelo diferente de 55 e 65)'
+        ],
+        '619 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Chave de Acesso inválida (número NF = 0)'
+        ],
+        '620 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Chave de Acesso difere da existente em BD'
+        ],
+        '621 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CPF Emitente não cadastrado'
+        ],
+        '622 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: IE emitente não vinculada ao CPF'
+        ],
+        '623 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CPF Destinatário não cadastrado'
+        ],
+        '624 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: IE Destinatário não vinculada ao CPF'
+        ],
+        '625 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Inscrição SUFRAMA deve ser informada na venda com isenção para ZFM'
+        ],
+        '626 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CFOP de operação isenta para ZFM diferente do previsto'
+        ],
+        '627 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: O valor do ICMS desonerado deve ser informado'
+        ],
+        '628 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total da NF superior ao valor limite estabelecido pela SEFAZ [Limite]'
+        ],
+        '629 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Valor do Produto difere do produto Valor Unitário de Comercialização e Quantidade Comercial'
+        ],
+        '630 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Valor do Produto difere do produto Valor Unitário de Tributação e Quantidade Tributável'
+        ],
+        '631 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CNPJ-Base do Destinatário difere do CNPJ-Base do Certificado Digital'
+        ],
+        '632 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Solicitação fora de prazo, a NF-e não está mais disponível para download'
+        ],
+        '633 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e indisponível para download devido a ausência de Manifestação do Destinatário'
+        ],
+        '634 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Destinatário da NF-e não tem o mesmo CNPJ raiz do solicitante do download'
+        ],
+        '635 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e com mesmo número e série já transmitida e aguardando processamento'
+        ],
+        '650 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Evento de "Ciência da Emissão" para NF-e Cancelada ou Denegada'
+        ],
+        '651 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Evento de "Desconhecimento da Operação" para NF-e Cancelada ou Denegada'
+        ],
+        '653 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e Cancelada, arquivo indisponível para download'
+        ],
+        '654 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e Denegada, arquivo indisponível para download'
+        ],
+        '655 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Evento de Ciência da Emissão informado após a manifestação final do destinatário'
+        ],
+        '656 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Consumo Indevido'
+        ],
+        '657 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Código do Órgão diverge do órgão autorizador'
+        ],
+        '658 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: UF do destinatário da Chave de Acesso diverge da UF autorizadora'
+        ],
+        '660 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CFOP de Combustível e não informado grupo de combustível da NF-e'
+        ],
+        '661 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e já existente para o número do EPEC informado'
+        ],
+        '662 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Numeração do EPEC está inutilizada na Base de Dados da SEFAZ'
+        ],
+        '663 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Alíquota do ICMS com valor superior a 4 por cento na operação de saída interestadual'
+        ],
+        'com 	' => [
+            'type' => 0,
+            'message' => 'produtos importados'
+        ],
+        '678 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF referenciada com UF diferente da NF-e complementar'
+        ],
+        '679 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Modelo da NF-e referenciada diferente de 55/65'
+        ],
+        '680 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Duplicidade de NF-e referenciada (Chave de Acesso referenciada mais de uma vez)'
+        ],
+        '681 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Duplicidade de NF Modelo 1 referenciada (CNPJ, Modelo, Série e Número)'
+        ],
+        '682 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Duplicidade de NF de Produtor referenciada (IE, Modelo, Série e Número)'
+        ],
+        '683 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Modelo do CT-e referenciado diferente de 57'
+        ],
+        '684 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Duplicidade de Cupom Fiscal referenciado (Modelo, Número de Ordem e COO)'
+        ],
+        '685 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do Valor Aproximado dos Tributos difere do somatório dos itens'
+        ],
+        '686 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF Complementar referencia uma NF-e cancelada'
+        ],
+        '687 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF Complementar referencia uma NF-e denegada'
+        ],
+        '688 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF referenciada de Produtor com IE inexistente [nRef: xxx]'
+        ],
+        '689 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF referenciada de Produtor com IE não vinculada ao CNPJ/CPF informado [nRef: xxx]'
+        ],
+        '690 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Pedido de Cancelamento para NF-e com CT-e'
+        ],
+        '691 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Chave de Acesso da NF-e diverge da Chave de Acesso do EPEC'
+        ],
+        '700 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Mensagem de Lote versão 3.xx. Enviar para o Web Service nfeAutorizacao'
+        ],
+        '701 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e não pode utilizar a versão 3.00'
+        ],
+        '702 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e não é aceita pela UF do Emitente'
+        ],
+        '703 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Data-Hora de Emissão posterior ao horário de recebimento'
+        ],
+        '704 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com Data-Hora de emissão atrasada'
+        ],
+        '705 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com data de entrada/saída'
+        ],
+        '706 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e para operação de entrada'
+        ],
+        '707 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e para operação interestadual ou com o exterior'
+        ],
+        '708 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e não pode referenciar documento fiscal'
+        ],
+        '709 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com formato de DANFE inválido'
+        ],
+        '710 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e com formato de DANFE inválido'
+        ],
+        '711 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e com contingência off-line'
+        ],
+        '712 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com contingência off-line para a UF'
+        ],
+        '713 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Tipo de Emissão diferente de 6 ou 7 para contingência da SVC acessada'
+        ],
+        '714 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com contingência DPEC inexistente'
+        ],
+        '715 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com finalidade inválida'
+        ],
+        '716 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e em operação não destinada a consumidor final'
+        ],
+        '717 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e em operação não presencial'
+        ],
+        '718 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e não deve informar IE de Substituto Tributário'
+        ],
+        '719 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e sem a identificação do destinatário'
+        ],
+        '720 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Na operação com Exterior deve ser informada tag idEstrangeiro'
+        ],
+        '721 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Operação interestadual deve informar CNPJ ou CPF.'
+        ],
+        '723 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Operação interna com idEstrangeiro informado deve ser para consumidor final'
+        ],
+        '724 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e sem o nome do destinatário'
+        ],
+        '725 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com CFOP inválido'
+        ],
+        '726 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e sem a informação de endereço do destinatário'
+        ],
+        '727 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Operação com Exterior e UF diferente de EX'
+        ],
+        '728 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e sem informação da IE do destinatário'
+        ],
+        '729 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com informação da IE do destinatário'
+        ],
+        '730 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com Inscrição Suframa'
+        ],
+        '731 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CFOP de operação com Exterior e idDest <> 3'
+        ],
+        '732 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CFOP de operação interestadual e idDest <> 2'
+        ],
+        '733 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: CFOP de operação interna e idDest <> 1'
+        ],
+        '734 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com Unidade de Comercialização inválida'
+        ],
+        '735 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com Unidade de Tributação inválida'
+        ],
+        '736 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com grupo de Veículos novos'
+        ],
+        '737 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com grupo de Medicamentos'
+        ],
+        '738 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com grupo de Armamentos'
+        ],
+        '739 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com grupo de Combustível'
+        ],
+        '740 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com CST 51-Diferimento'
+        ],
+        '741 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com Partilha de ICMS entre UF'
+        ],
+        '742 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com grupo do IPI'
+        ],
+        '743 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com grupo do II'
+        ],
+        '745 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e sem grupo do PIS'
+        ],
+        '746 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com grupo do PIS-ST'
+        ],
+        '748 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e sem grupo da COFINS'
+        ],
+        '749 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com grupo da COFINS-ST'
+        ],
+        '750 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com valor total superior ao permitido para destinatário não identificado (Código) [Limite]'
+        ],
+        '751 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com valor total superior ao permitido para destinatário não identificado (Nome) [Limite]'
+        ],
+        '752 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com valor total superior ao permitido para destinatário não identificado (Endereço) [Limite]'
+        ],
+        '753 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com Frete'
+        ],
+        '754 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com dados do Transportador'
+        ],
+        '755 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com dados de Retenção do ICMS no Transporte'
+        ],
+        '756 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com dados do veículo de Transporte'
+        ],
+        '757 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com dados de Reboque do veículo de Transporte'
+        ],
+        '758 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com dados do Vagão de Transporte'
+        ],
+        '759 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com dados da Balsa de Transporte'
+        ],
+        '760 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com dados de cobrança (Fatura, Duplicata)'
+        ],
+        '762 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com dados de compras (Empenho, Pedido, Contrato)'
+        ],
+        '763 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com dados de aquisição de Cana'
+        ],
+        '764 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Solicitada resposta síncrona para Lote com mais de uma NF-e (indSinc=1)'
+        ],
+        '765 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Lote só poderá conter NF-e ou NFC-e'
+        ],
+        '766 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com CST 50-Suspensão'
+        ],
+        '767 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com somatório dos pagamentos diferente do total da Nota Fiscal'
+        ],
+        '768 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e não deve possuir o grupo de Formas de Pagamento'
+        ],
+        '769 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: A critério da UF NFC-e deve possuir o grupo de Formas de Pagamento'
+        ],
+        '770 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e autorizada há mais de 24 horas.'
+        ],
+        '771 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Operação Interestadual e UF de destino com EX'
+        ],
+        '772 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Operação Interestadual e UF de destino igual à UF do emitente'
+        ],
+        '773 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Operação Interna e UF de destino difere da UF do emitente'
+        ],
+        '774 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com indicador de item não participante do total'
+        ],
+        '775 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Modelo da NFC-e diferente de 65'
+        ],
+        '776 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Solicitada resposta síncrona para UF que não disponibiliza este atendimento (indSinc=1)'
+        ],
+        '777 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Obrigatória a informação do NCM completo'
+        ],
+        '778 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Informado NCM inexistente'
+        ],
+        '779 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com NCM incompatível'
+        ],
+        '780 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total da NFC-e superior ao valor limite estabelecido pela SEFAZ [Limite]'
+        ],
+        '781 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Emissor não habilitado para emissão da NFC-e'
+        ],
+        '782 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e não é autorizada pelo SCAN'
+        ],
+        '783 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e não é autorizada pela SVC'
+        ],
+        '784 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e não permite o evento de Carta de Correção'
+        ],
+        '785 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e com entrega a domicílio não permitida pela UF'
+        ],
+        '786 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e de entrega a domicílio sem dados do Transportador'
+        ],
+        '787 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e de entrega a domicílio sem a identificação do destinatário'
+        ],
+        '788 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e de entrega a domicílio sem o endereço do destinatário'
+        ],
+        '789 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NFC-e para destinatário contribuinte de ICMS'
+        ],
+        '790 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Operação com Exterior para destinatário Contribuinte de ICMS'
+        ],
+        '791 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e com indicação de destinatário isento de IE, com a informação da IE do destinatário'
+        ],
+        '792 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Informada a IE do destinatário para operação com destinatário no Exterior'
+        ],
+        '793 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Informado Capítulo do NCM inexistente'
+        ],
+        '794 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e com indicativo de NFC-e com entrega a domicílio'
+        ],
+        '795 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Total do ICMS desonerado difere do somatório dos itens'
+        ],
+        '796 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Empresa sem Chave de Segurança para o QR-Code'
+        ],
+        '301 	' => [
             'type' => 0,
             'message' => 'Uso Denegado: Irregularidade fiscal do emitente'
+        ],
+        '302 	' => [
+            'type' => 0,
+            'message' => 'Uso Denegado: Irregularidade fiscal do destinatário'
+        ],
+        '303 	' => [
+            'type' => 0,
+            'message' => 'Uso Denegado: Destinatário não habilitado a operar na UF'
+        ],
+        '999 	' => [
+            'type' => 0,
+            'message' => 'Rejeição: Erro não catalogado (informar a mensagem de erro capturado no tratamento da exceção)'
         ]
     ];
 }

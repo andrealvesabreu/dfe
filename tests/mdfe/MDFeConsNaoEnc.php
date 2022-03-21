@@ -1,29 +1,29 @@
 <?php
-include 'cte_base.php';
-use Inspire\Dfe\Cte;
+include 'mdfe_base.php';
 use Inspire\Dfe\Certificate;
 use Inspire\Config\Config;
 use Inspire\Validator\Variable;
 use Inspire\Dfe\Cte\ParserResponse;
 use Inspire\Support\Xml\Xml;
+use Inspire\Dfe\Mdfe;
 
 /**
- * CT-e Batch Processing Inquiry configuration and sent
+ * Service Status Query configuration and sent
  */
 try {
-    $cte = new Cte([
-        'mod' => '57',
+    $mdfe = new Mdfe([
+        'mod' => '58',
         'version' => '3.00',
         'saveFiles' => true,
         'xUF' => 'RS',
-        'tpAmb' => 2,
+        'tpAmb' => 1,
         'CNPJ' => $CNPJ,
-        'schemaPath' => ROOT_DIR . '/tests/schemas/CTe3.00a'
+        'schemaPath' => ROOT_DIR . '/tests/schemas/MDFe3.00a'
         // Optionals
         // 'date' => '2021-02-28',
         // 'UF' => '43'
     ], $cert);
-    $send = $cte->CteRetRecepcao('[protocolo]');
+    $send = $mdfe->MDFeConsNaoEnc($CNPJ);
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {

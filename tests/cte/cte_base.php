@@ -6,10 +6,10 @@ use Inspire\Config\Config;
 use Inspire\Validator\Variable;
 
 define('APP_NAME', 'test');
-define('ROOT_DIR', dirname(__DIR__));
+define('ROOT_DIR', dirname(dirname(__DIR__)));
 
-include dirname(__DIR__) . '/vendor/autoload.php';
-Config::loadFromFolder('config');
+include dirname(dirname(__DIR__)) . '/vendor/autoload.php';
+Config::loadFromFolder('../config');
 /**
  * Instantiate a Certificate object
  *
@@ -26,4 +26,4 @@ $validate = $cert->check(ROOT_DIR . '/tests/certs/cert.pfx', // Certificate path
 '190617'); // Certificate password
 echo "Certificate is valid ultill {$validate->getExtra('expiresIn')}\n\n";
 
-$CNPJ = '123454651387';
+$CNPJ = '';

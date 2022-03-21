@@ -17,7 +17,7 @@ class Mdfe extends Base
 {
 
     /**
-     * Parse SEFAZ response of MDFeRecepcao OK
+     * Parse SEFAZ response of MDFeRecepcao
      *
      * @param Xml $xml
      * @return array
@@ -49,80 +49,149 @@ class Mdfe extends Base
     }
 
     /**
-     * Parse SEFAZ response of MDFeRetRecepcao OK
+     * Parse SEFAZ response of MDFeRetRecepcao
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
      */
     public static function MDFeRetRecepcao(Xml $xml): array
     {
+        /**
+         * Arrays to easy parser
+         *
+         * $aData array
+         */
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retConsReciMDFe');
+        /**
+         * XML to get real protocol, if available
+         */
+        $parserProt = new Xml($xml->getXml(), true);
+        /**
+         * Forgetting all @attributes
+         */
         Arrays::forget($aData, [
-            '@attributes',
-            'protMDFe'
+            '@attributes'
         ]);
-        Arrays::set($aData, 'aProt', []);
-        foreach ($xml->xml->xpath("//protMDFe") as $i => $prot) {
-            $chMDFe = $xml->xpathXml('/chMDFe', $i)->__toString();
-            $pr = Arrays::get(Xml::xmlToArray($prot->saveXML()), 'protMDFe.infProt');
-            Arrays::forget($pr, [
-                '@attributes'
+        if (isset($aData['protMDFe'][0])) {
+            foreach ($aData['protMDFe'] as &$ct) {
+                Arrays::set($ct, 'versao', Arrays::get($ct, '@attributes.versao'));
+                Arrays::forget($ct, [
+                    '@attributes',
+                    'infProt.@attributes'
+                ]);
+            }
+        } else {
+            Arrays::set($aData['protMDFe'], 'versao', Arrays::get($aData, 'protMDFe.@attributes.versao'));
+            Arrays::forget($aData, [
+                'protMDFe.@attributes',
+                'protMDFe.infProt.@attributes'
             ]);
-            Arrays::set($aData, "aProt.{$chMDFe}", [
-                'infProt' => $pr,
-                'protMDFe' => $prot->saveXML()
-            ]);
+            $aData['protMDFe'] = [
+                $aData['protMDFe']
+            ];
         }
+        /**
+         * Remapping array for MDFe keys (protMDFe.[chMDFe].infProt)
+         */
+        foreach ($aData['protMDFe'] as $i => $prot) {
+            Arrays::forget($aData['protMDFe'], $i);
+            $prot['xml'] = $parserProt->xpathXml('/protMDFe', $i)->asXML();
+            Arrays::set($aData['protMDFe'], Arrays::get($prot, 'infProt.chMDFe'), $prot);
+        }
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
         return $aData;
     }
 
     /**
      * Parse SEFAZ response of MDFeConsulta
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
      */
     public static function MDFeConsulta(Xml $xml): array
     {
+        /**
+         * Arrays to easy parser
+         *
+         * $aData array
+         */
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retConsSitMDFe');
+        /**
+         * Forgetting all @attributes
+         */
+        Arrays::forget($aData, [
+            '@attributes'
+        ]);
         $parser = [
             'versao' => Arrays::get($aData, '@attributes.versao'),
             'tpAmb' => Arrays::get($aData, 'tpAmb'),
             'verAplic' => Arrays::get($aData, 'verAplic'),
             'cStat' => Arrays::get($aData, 'cStat'),
             'xMotivo' => Arrays::get($aData, 'xMotivo'),
-            'cUF' => Arrays::get($aData, 'cUF'),
-            'protMDFe' => null,
-            'protEventos' => null
+            'cUF' => Arrays::get($aData, 'cUF')
         ];
-        $prot = Arrays::get($aData, 'protMDFe');
-        if ($prot && is_array($prot)) {
-            $parser['protMDFe']['infProt'] = [
-                'versao' => Arrays::get($prot, '@attributes.versao'),
-                'tpAmb' => Arrays::get($prot, 'infProt.tpAmb'),
-                'verAplic' => Arrays::get($prot, 'infProt.verAplic'),
-                'chMDFe' => Arrays::get($prot, 'infProt.chMDFe'),
-                'dhRecbto' => Arrays::get($prot, 'infProt.dhRecbto'),
-                'nProt' => Arrays::get($prot, 'infProt.nProt'),
-                'digVal' => Arrays::get($prot, 'infProt.digVal'),
-                'cStat' => Arrays::get($prot, 'infProt.cStat'),
-                'xMotivo' => Arrays::get($prot, 'infProt.xMotivo'),
-                'protMDFe' => $xml->xml->xpath("//protMDFe")[0]->saveXML()
-            ];
-        }
-        $procEventoMDFe = Arrays::get($aData, 'procEventoMDFe');
-        if (! empty($procEventoMDFe)) {
-            $parser['protEventos'] = [];
-            foreach ($procEventoMDFe as $i => $prot) {
-                $retEventoMDFe = [
-                    'retEventoMDFe' => $prot['retEventoMDFe'],
-                    'procEventoMDFe' => $xml->xml->xpath("//procEventoMDFe")[$i]->saveXML()
-                ];
-                Arrays::forget($retEventoMDFe, [
-                    'retEventoMDFe.infEvento.@attributes',
-                    'retEventoMDFe.@attributes'
-                ]);
-                $parser['protEventos'][] = $retEventoMDFe;
+        /**
+         * Adding control info
+         */
+        Arrays::set($parser, 'cType', self::$messages[$aData['cStat']]['type']);
+        Arrays::set($parser, 'xReason', self::$messageType[$parser['cType']]);
+        Arrays::set($parser, 'bStat', $parser['cType'] == 1);
+        /**
+         * If there is a MDFe
+         */
+        if ($parser['bStat']) {
+            /**
+             * XML to get all XML (protocol and events)
+             */
+            $parserProt = new Xml($xml->getXml(), true);
+            /**
+             * Remapping protocol data (remove attributes, add version and XML)
+             */
+            Arrays::set($aData, 'protMDFe.xml', $parserProt->xpathXml('/protMDFe', 0)->asXML());
+            Arrays::set($aData['protMDFe'], 'versao', Arrays::get($aData, 'protMDFe.@attributes.versao'));
+            Arrays::forget($aData, [
+                'protMDFe.@attributes',
+                'protMDFe.infProt.@attributes'
+            ]);
+            $parser['protMDFe'] = $aData['protMDFe'];
+            /**
+             * Check if there is a procEventoMDFe group
+             */
+            if (isset($aData['procEventoMDFe']) && ! empty($aData['procEventoMDFe'])) {
+                if (! isset($aData['procEventoMDFe'][0])) {
+                    $aData['procEventoMDFe'] = [
+                        $aData['procEventoMDFe']
+                    ];
+                }
+                /**
+                 * Getting data for each events
+                 */
+                $parser['procEventoMDFe'] = [];
+                foreach ($aData['procEventoMDFe'] as $i => $prot) {
+                    $prot = $prot['retEventoMDFe'];
+                    $parser['procEventoMDFe'][] = [
+                        'versao' => Arrays::get($prot, '@attributes.versao'),
+                        'tpAmb' => Arrays::get($prot, 'infEvento.tpAmb'),
+                        'verAplic' => Arrays::get($prot, 'infEvento.verAplic'),
+                        'cOrgao' => Arrays::get($prot, 'infEvento.cOrgao'),
+                        'cStat' => Arrays::get($prot, 'infEvento.cStat'),
+                        'xMotivo' => Arrays::get($prot, 'infEvento.xMotivo'),
+                        'chMDFe' => Arrays::get($prot, 'infEvento.chMDFe'),
+                        'tpEvento' => Arrays::get($prot, 'infEvento.tpEvento'),
+                        'xEvento' => Arrays::get($prot, 'infEvento.xEvento'),
+                        'nSeqEvento' => Arrays::get($prot, 'infEvento.nSeqEvento'),
+                        'dhRegEvento' => Arrays::get($prot, 'infEvento.dhRegEvento'),
+                        'nProt' => Arrays::get($prot, 'infEvento.nProt'),
+                        'xml' => $parserProt->xpathXml('/procEventoMDFe', $i)->asXML()
+                    ];
+                }
             }
         }
         return $parser;
@@ -130,6 +199,7 @@ class Mdfe extends Base
 
     /**
      * Parse SEFAZ response of MDFeConsNaoEnc
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
@@ -144,7 +214,8 @@ class Mdfe extends Base
     }
 
     /**
-     * Parse SEFAZ response of CteStatusServico
+     * Parse SEFAZ response of MDFeStatusServico
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
@@ -175,46 +246,61 @@ class Mdfe extends Base
 
     /**
      * Parse response Distribuição documentos e informações de interesse do ator do MDF-e
+     * Fully implemented
      *
      * @param Xml $xml
      * @return array
      */
-    public static function MDFeDistribuicaoDFe(Xml $xml, array $unpack = null): array
+    public static function MDFeDistribuicaoDFe(Xml $xml): array
     {
         /**
-         * Suggeted values for $unpack: ['procMDFe', 'procEventoMDFe']
+         * Arrays to easy parser
+         *
+         * $aData array
          */
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retDistDFeInt');
-        var_dump($aData);
-        // $xml->load($xml->getXml());
-        $parsed = [
-            'versao' => Arrays::get($aData, '@attributes.versao'),
-            'tpAmb' => Arrays::get($aData, 'tpAmb'),
-            'verAplic' => Arrays::get($aData, 'verAplic'),
-            'cStat' => Arrays::get($aData, 'cStat'),
-            'xMotivo' => Arrays::get($aData, 'xMotivo'),
-            'dhResp' => Arrays::get($aData, 'dhResp'),
-            'ultNSU' => Strings::toInt(Arrays::get($aData, 'ultNSU')),
-            'maxNSU' => Strings::toInt(Arrays::get($aData, 'maxNSU')),
-            'aDocs' => []
-        ];
-        $docs = Arrays::get($aData, 'loteDistDFeInt.docZip');
-        if ($unpack !== null) {
-            $unpack = array_flip($unpack);
-        }
-        if ($docs !== null) {
-            foreach ($docs as $doc) {
-                $schema = strtok(Arrays::get($doc, '@attributes.schema'), '_');
-                $parsed['aDocs'][] = [
-                    'NSU' => Strings::toInt(Arrays::get($doc, '@attributes.NSU')),
-                    'schema' => $schema,
-                    'xml' => ($unpack !== null && Arrays::keyCheck($schema, $unpack)) || // Some type of package is set and actual package is one of that
-                    $unpack === null ? // No restriction of type is set
-                    gzdecode(base64_decode($doc[0])) : null
+        /**
+         * Forgetting all @attributes
+         */
+        Arrays::forget($aData, [
+            '@attributes'
+        ]);
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
+        Arrays::set($aData, 'isLast', intval($aData['ultNSU']) == intval($aData['maxNSU']));
+        /**
+         * Ig there is some event or document, process data
+         */
+        if ($aData['bStat'] && ! empty($aData['loteDistDFeInt'])) {
+            $loteDistDFeInt = [];
+            /**
+             * Noraliza package case there is a single document
+             */
+            if (! isset($aData['loteDistDFeInt']['docZip'][0])) {
+                $aData['loteDistDFeInt']['docZip'] = [
+                    $aData['loteDistDFeInt']['docZip']
                 ];
             }
+            $docs = $aData['loteDistDFeInt']['docZip'];
+            foreach ($docs as $doc) {
+                $schema = strtok(Arrays::get($doc, '@attributes.schema'), '_');
+                if ((self::$unpack !== null && Arrays::keyCheck($schema, self::$unpack)) || // Some type of package is set and actual package is one of that
+                self::$unpack === null) {
+                    $loteDistDFeInt[] = [
+                        'NSU' => Strings::toInt(Arrays::get($doc, '@attributes.NSU')),
+                        'schema' => $schema,
+                        'xml' => gzdecode(base64_decode($doc['@value']))
+                    ];
+                }
+            }
+            $aData['aDocs'] = $loteDistDFeInt;
+            unset($aData['loteDistDFeInt']);
         }
-        return $parsed;
+        return $aData;
     }
 
     /**
@@ -241,20 +327,20 @@ class Mdfe extends Base
      * @var array
      */
     private static array $messages = [
-        '100' => [
-            'type' => 0,
+        '100' => [ // Verified
+            'type' => 1,
             'message' => 'Autorizado o uso do MDF-e'
         ],
-        '101' => [
-            'type' => 0,
+        '101' => [ // Verified
+            'type' => 1,
             'message' => 'Cancelamento de MDF-e homologado'
         ],
-        '103' => [
-            'type' => 0,
+        '103' => [ // Verified
+            'type' => 1,
             'message' => 'Arquivo recebido com sucesso'
         ],
-        '104' => [
-            'type' => 0,
+        '104' => [ // Verified
+            'type' => 1,
             'message' => 'Arquivo processado'
         ],
         '105' => [
@@ -269,12 +355,12 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Serviço em Operação'
         ],
-        '108' => [
-            'type' => 0,
+        '108' => [ // Verified
+            'type' => 3,
             'message' => 'Serviço Paralisado Momentaneamente (curto prazo)'
         ],
-        '109' => [
-            'type' => 0,
+        '109' => [ // Verified
+            'type' => 4,
             'message' => 'Serviço Paralisado sem Previsão'
         ],
         '111' => [
@@ -300,6 +386,14 @@ class Mdfe extends Base
         '136' => [
             'type' => 0,
             'message' => 'Evento registrado, mas não vinculado a MDF-e'
+        ],
+        '137' => [ // Verified
+            'type' => 1,
+            'message' => 'Nenhum documento localizado'
+        ],
+        '138' => [ // Verified
+            'type' => 1,
+            'message' => 'Documento localizado'
         ],
         '202' => [
             'type' => 0,
@@ -333,11 +427,11 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: CNPJ-Base do Emitente difere do CNPJ-Base do Certificado Digital'
         ],
-        '214' => [
+        '214' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Tamanho da mensagem excedeu o limite estabelecido'
         ],
-        '215' => [
+        '215' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Falha no schema XML'
         ],
@@ -417,15 +511,15 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: Cabeçalho - Versão do arquivo XML superior a Versão vigente'
         ],
-        '239' => [
+        '239' => [ // Verified
             'type' => 0,
-            'message' => 'Rejeição: Versão do arquivo XML não suportada'
+            'message' => 'Rejeição: Cabeçalho - Versão do arquivo XML não suportada'
         ],
-        '242' => [
+        '242' => [ // Verified
             'type' => 0,
-            'message' => 'Rejeição: Elemento mdfeCabecMsg inexistente no SOAP Header'
+            'message' => 'Rejeição: Elemento cteCabecMsg inexistente no SOAP Header'
         ],
-        '243' => [
+        '243' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: XML Mal Formado'
         ],
@@ -445,7 +539,7 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: UF da Chave de Acesso diverge da UF autorizadora'
         ],
-        '252' => [
+        '252' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Ambiente informado diverge do Ambiente de recebimento'
         ],
@@ -453,33 +547,37 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: Digito Verificador da chave de acesso composta inválido'
         ],
-        '280' => [
-            'type' => 0,
+        '280' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor inválido'
         ],
-        '281' => [
-            'type' => 0,
+        '281' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor Data Validade'
         ],
-        '282' => [
-            'type' => 0,
-            'message' => 'Rejeição: Certificado Transmissor sem CNPJ / CPF'
+        '282' => [ // Verified
+            'type' => 6,
+            'message' => 'Rejeição: Certificado Transmissor sem CNPJ'
         ],
-        '283' => [
-            'type' => 0,
+        '283' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor - erro Cadeia de Certificação'
         ],
-        '284' => [
-            'type' => 0,
+        '284' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor revogado'
         ],
-        '285' => [
-            'type' => 0,
+        '285' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor difere ICP-Brasil'
         ],
-        '286' => [
-            'type' => 0,
+        '286' => [ // Verified
+            'type' => 6,
             'message' => 'Rejeição: Certificado Transmissor erro no acesso a LCR'
+        ],
+        '287' => [ // Verified
+            'type' => 6,
+            'message' => 'Rejeição: Certificado Transmissor sem CNPJ ou CPF'
         ],
         '290' => [
             'type' => 0,
@@ -517,11 +615,11 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: Assinatura difere do padrão do Projeto'
         ],
-        '402' => [
+        '402' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: XML da área de dados com codificação diferente de UTF-8'
         ],
-        '404' => [
+        '404' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Uso de prefixo de namespace não permitido'
         ],
@@ -543,15 +641,15 @@ class Mdfe extends Base
         ],
         '409' => [
             'type' => 0,
-            'message' => 'Rejeição: Campo cUF inexistente no elemento mdfeCabecMsg do SOAP Header'
+            'message' => 'Rejeição: Campo cUF inexistente no elemento cteCabecMsg do SOAP Header'
         ],
-        '410' => [
+        '410' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: UF informada no campo cUF não é atendida pelo WebService'
         ],
-        '411' => [
+        '411' => [ // Verified
             'type' => 0,
-            'message' => 'Rejeição: Campo versaoDados inexistente no elemento mdfeCabecMsg do SOAP Header'
+            'message' => 'Rejeição: Campo versaoDados inexistente no elemento cteCabecMsg do SOAP Header'
         ],
         '454' => [
             'type' => 0,
@@ -605,6 +703,10 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: Parâmetro sign não deve ser informado no QR Code para emissão Normal'
         ],
+        '493' => [ // Verified
+            'type' => 0,
+            'message' => 'Rejeição: Número do NSU informado superior ao maior NSU da base de dados do Ambiente Nacional'
+        ],
         '496' => [
             'type' => 0,
             'message' => 'Rejeição: Assinatura do QR-Code difere do calculado'
@@ -641,11 +743,11 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: Falha no Schema XML específico para o modal'
         ],
-        '598' => [
+        '598' => [ // Verified
             'type' => 0,
-            'message' => 'Rejeição: Usar somente o namespace padrão do MDF-e'
+            'message' => 'Rejeição: Usar somente o namespace padrao do MDF-e'
         ],
-        '599' => [
+        '599' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Não é permitida a presença de caracteres de edição no início/fim da mensagem ou entre as tags da mensagem'
         ],
@@ -853,7 +955,7 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: NF-e informada não pode estar cancelada/denegada na base da SEFAZ [chNFe: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX]'
         ],
-        '678' => [
+        '678' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Uso Indevido'
         ],
@@ -992,6 +1094,10 @@ class Mdfe extends Base
         '721' => [
             'type' => 0,
             'message' => 'Rejeição: Obrigatória a informação do identificador do CSRT e do Hash do CSRT'
+        ],
+        '730' => [ // Verified
+            'type' => 0,
+            'message' => 'Rejeição: NSU solicitado muito antigo [NSUMin: 999999999999999]'
         ],
         '997' => [
             'type' => 0,

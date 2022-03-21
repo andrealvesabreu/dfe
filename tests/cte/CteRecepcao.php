@@ -4,10 +4,11 @@ use Inspire\Dfe\Cte;
 use Inspire\Dfe\Certificate;
 use Inspire\Config\Config;
 use Inspire\Validator\Variable;
+use Inspire\Dfe\Dfe;
+
 /**
  * Cargo Transport CT-e Reception Service configuration and sent
  */
-
 try {
     $cte = new Cte([
         'mod' => '57',
@@ -21,9 +22,11 @@ try {
         // 'date' => '2021-02-28',
         // 'UF' => '43'
     ], $cert);
+    // echo $cte->sign('xmlcte', 'infCte', 'Id');
+    // exit;
     $send = $cte->CteRecepcao('123465789', [
-        'onecte',
-        'anothercte'
+        'xml1',
+        'xml2'
     ]);
     if ($send->isOk()) {
         var_dump($send->getExtra());

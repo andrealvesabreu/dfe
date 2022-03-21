@@ -990,7 +990,7 @@ class Dfe
              * Document status webservice
              */
             case 'CteRetRecepcao':
-                // case 'MDFeRetRecepcao':
+            case 'MDFeRetRecepcao':
                 $resp = [
                     'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
                     'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response"),
