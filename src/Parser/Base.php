@@ -38,7 +38,8 @@ class Base
         3 => 'Temporary error on service',
         4 => 'Permanent error on service',
         5 => 'Permanent error with carrier registration',
-        6 => 'Certificate error'
+        6 => 'Certificate error',
+        7 => 'Permanent error on document' // When there is no way to perform some action with one document
     ];
 }
 

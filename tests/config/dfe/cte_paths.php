@@ -81,6 +81,11 @@ return [
                 'request' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/evcancce',
                 'response' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/evcancce',
                 'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/producao/eventos/evcancce'
+            ],
+            'evPrestDesacordo' => [ // Event providing service in disagreement
+                'request' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/evprestdesacordo',
+                'response' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/evprestdesacordo',
+                'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/producao/eventos/evprestdesacordo'
             ]
         ],
         'CTeDistribuicaoDFe' => [ // Distributes documents and information of interest to the CT-e actor request and response
@@ -156,6 +161,11 @@ return [
                 'request' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/evcancce',
                 'response' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/evcancce',
                 'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/homologacao/eventos/evcancce'
+            ],
+            'evPrestDesacordo' => [ // Event providing service in disagreement
+                'request' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/evprestdesacordo',
+                'response' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/evprestdesacordo',
+                'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/homologacao/eventos/evprestdesacordo'
             ]
         ],
         'CTeDistribuicaoDFe' => [ // Distributes documents and information of interest to the CT-e actor request and response

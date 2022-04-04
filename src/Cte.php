@@ -22,15 +22,15 @@ use Inspire\Support\ {
 /**
  * Class implements methods from SEFAZ
  *
- * Web Service - CteRecepcao
+ * Web Service - CteRecepcao OK
  * Web Service - CteRecepcaoOS
- * Web Service - CteRetRecepcao
- * Web Service - CteInutilizacao
- * Web Service - CteConsulta
- * Web Service - CteStatusServico
- * Web Service - CteConsultaCadastro
- * Web Service - CteRecepcaoEvento
- * Web Service - CTeDistribuicaoDFe
+ * Web Service - CteRetRecepcao OK
+ * Web Service - CteInutilizacao OK
+ * Web Service - CteConsulta OK
+ * Web Service - CteStatusServico OK
+ * Web Service - CteConsultaCadastro ?
+ * Web Service - CteRecepcaoEvento OK
+ * Web Service - CTeDistribuicaoDFe OK
  *
  * @author aalves
  */
@@ -75,6 +75,9 @@ class Cte extends Dfe
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -171,6 +174,9 @@ class Cte extends Dfe
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -264,6 +270,9 @@ class Cte extends Dfe
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -465,6 +474,9 @@ class Cte extends Dfe
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -557,6 +569,9 @@ class Cte extends Dfe
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -628,6 +643,9 @@ class Cte extends Dfe
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -673,11 +691,11 @@ class Cte extends Dfe
      *
      * @param string $chDFe
      * @param int $nSeqEvent
-     * @param string $tipo
+     * @param string $tpEvent
      * @param array $detEvent
      * @return string
      */
-    protected function event(string $chDFe, int $nSeqEvent, string $type, array $detEvent): Xml
+    protected function event(string $chDFe, int $nSeqEvent, string $tpEvent, array $detEvent): Xml
     {
         $nSeqEvent = str_pad((string) $nSeqEvent, 2, '0', STR_PAD_LEFT);
         $body = [
@@ -688,20 +706,150 @@ class Cte extends Dfe
                 ],
                 'infEvento' => [
                     '@attributes' => [
-                        'Id' => "ID{$type}{$chDFe}{$nSeqEvent}"
+                        'Id' => "ID{$tpEvent}{$chDFe}{$nSeqEvent}"
                     ],
                     'cOrgao' => $this->cUF,
                     'tpAmb' => $this->tpAmb,
                     'CNPJ' => $this->CNPJ,
                     'chCTe' => $chDFe,
                     'dhEvento' => date('c'),
-                    'tpEvento' => $type,
+                    'tpEvento' => $tpEvent,
                     'nSeqEvento' => intval($nSeqEvent),
                     'detEvento' => $detEvent
                 ]
             ]
         ];
         return new Xml($this->sign(Xml::arrayToXml($body), 'infEvento', 'Id', 'eventoCTe'));
+    }
+
+    /**
+     * Document correction event
+     * Fully implemented
+     *
+     * @param string $chCTe
+     * @param int $nSeqEvent
+     * @param array $infCorrecao
+     *            multi dimensional array with the following structure:
+     *            [
+     *            [
+     *            'grupoAlterado' => 'test1',
+     *            'campoAlterado' => 'field1',
+     *            'valorAlterado' => 'value1',
+     *            'nroItemAlterado' => 1
+     *            ],
+     *            [
+     *            'grupoAlterado' => 'test2',
+     *            'campoAlterado' => 'field2',
+     *            'valorAlterado' => 'value2'
+     *            ],
+     *            [
+     *            'grupoAlterado' => 'test3',
+     *            'campoAlterado' => 'field3',
+     *            'valorAlterado' => 'value3',
+     *            'nroItemAlterado' => 5
+     *            ],
+     *            ...
+     *            ]
+     * @return SystemMessage
+     */
+    public function evCCeCTe(string $chCTe, int $nSeqEvent, array $infCorrecao): SystemMessage
+    {
+        if (! Variable::nfeAccessKey()->validate($chCTe)) {
+            return new SystemMessage("Invalid CTe key: {$chCTe}", // Message
+            '0', // System code
+            SystemMessage::MSG_ERROR, // System status code
+            false); // System status
+        }
+        $initialize = $this->prepare('CteRecepcaoEvento');
+        if (! $initialize->isOk()) {
+            return $initialize;
+        }
+        $tpEvent = '110110';
+        $detEvent = [
+            '@attributes' => [
+                'versaoEvento' => $this->urlVersion
+            ],
+            'evCCeCTe' => [
+                'descEvento' => $this->eventCode[$tpEvent]['desc'],
+                'infCorrecao' => $infCorrecao,
+                'xCondUso' => 'A Carta de Correcao e disciplinada pelo Art. 58-B do CONVENIO/SINIEF 06/89: Fica permitida a utilizacao de carta de correcao, para regularizacao de erro ocorrido na emissao de documentos fiscais relativos a prestacao de servico de transporte, desde que o erro nao esteja relacionado com: I - as variaveis que determinam o valor do imposto tais como: base de calculo, aliquota, diferenca de preco, quantidade, valor da prestacao;II - a correcao de dados cadastrais que implique mudanca do emitente, tomador, remetente ou do destinatario;III - a data de emissao ou de saida.'
+            ]
+        ];
+        $body = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            /**
+             * Validate main event structure
+             */
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+            /**
+             * Validate specific event structure
+             */
+            XsdSchema::validate(Xml::arrayToXml([
+                'evCCeCTe' => $detEvent['evCCeCTe']
+            ]), "{$this->schemaPath}/evCCeCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chCTe}-{$tpEvent}-{$nSeqEvent}";
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-eventoCTe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEventoCTe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
+
+                /**
+                 * Save protocol
+                 */
+                if ($response->getExtra('parse.infEvento.cStat') == 135) {
+                    $CCe = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
+                    $fileCC = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
+                    $response->addExtra([
+                        'parse.procXML' => $CCe,
+                        'parse.pathXML' => $fileCC
+                    ]);
+                    file_put_contents($fileCC, $CCe);
+                }
+            }
+        }
+        return $response;
     }
 
     /**
@@ -726,18 +874,18 @@ class Cte extends Dfe
         if (! $initialize->isOk()) {
             return $initialize;
         }
-        $type = '110111';
+        $tpEvent = '110111';
         $detEvent = [
             '@attributes' => [
                 'versaoEvento' => $this->urlVersion
             ],
             'evCancCTe' => [
-                'descEvento' => $this->eventCode[$type]['desc'],
+                'descEvento' => $this->eventCode[$tpEvent]['desc'],
                 'nProt' => $nProt,
                 'xJust' => $xJust
             ]
         ];
-        $body = $this->event($chCTe, $nSeqEvent, $type, $detEvent);
+        $body = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
         /**
          * Validate XML before send
          */
@@ -759,6 +907,9 @@ class Cte extends Dfe
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -767,7 +918,7 @@ class Cte extends Dfe
          */
         $paths = $response->getExtra('paths');
         if ($paths !== null) {
-            $baseName = "{$chCTe}-{$type}-{$nSeqEvent}";
+            $baseName = "{$chCTe}-{$tpEvent}-{$nSeqEvent}";
             /**
              * Save sent file
              *
@@ -799,7 +950,152 @@ class Cte extends Dfe
                  */
                 if ($response->getExtra('parse.infEvento.cStat') == 135) {
                     $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
-                    $fileCanc = "{$paths['document']}/{$chCTe}-{$type}-procEventoCTe.xml";
+                    $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
+                    $response->addExtra([
+                        'parse.procXML' => $canc,
+                        'parse.pathXML' => $fileCanc
+                    ]);
+                    file_put_contents($fileCanc, $canc);
+                }
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * Event intended to meet requests for issuance in CT-e contingency.
+     *
+     * @param string $chCTe
+     * @param int $nSeqEvent
+     * @param string $nProt
+     * @param string $xJust
+     * @return SystemMessage
+     */
+    // public function evEPECCTe(string $chCTe, int $nSeqEvent, string $nProt, string $xJust): SystemMessage
+    // {
+    // if (! Variable::nfeAccessKey()->validate($chCTe)) {
+    // return new SystemMessage("Invalid CTe key: {$chCTe}", // Message
+    // '0', // System code
+    // SystemMessage::MSG_ERROR, // System status code
+    // false); // System status
+    // }
+    // $initialize = $this->prepare('CteRecepcaoEvento');
+    // if (! $initialize->isOk()) {
+    // return $initialize;
+    // }
+    // $tpEvent = '110110';
+    // $detEvent = [
+    // '@attributes' => [
+    // 'versaoEvento' => $this->urlVersion
+    // ],
+    // 'evEPECCTe' => [
+    // 'descEvento' => $this->eventCode[$tpEvent]['desc'],
+    // 'nProt' => $nProt,
+    // 'xJust' => $xJust
+    // ]
+    // ];
+    // }
+
+    /**
+     * Event designed to link information on services provided to CT-e multimodal.
+     * Note that, if a CT-e is issued that is already linked to the multimodal CT-e, it is not necessary to inform it for this event.
+     * Fully implemented
+     *
+     * @param string $chCTe
+     * @param int $nSeqEvent
+     * @param string $nProt
+     * @param string $xJust
+     * @return SystemMessage
+     */
+    public function evRegMultimodal(string $chCTe, int $nSeqEvent, string $xRegistro, string $nDoc): SystemMessage
+    {
+        if (! Variable::nfeAccessKey()->validate($chCTe)) {
+            return new SystemMessage("Invalid CTe key: {$chCTe}", // Message
+            '0', // System code
+            SystemMessage::MSG_ERROR, // System status code
+            false); // System status
+        }
+        $initialize = $this->prepare('CteRecepcaoEvento');
+        if (! $initialize->isOk()) {
+            return $initialize;
+        }
+        $tpEvent = '110160';
+        $detEvent = [
+            '@attributes' => [
+                'versaoEvento' => $this->urlVersion
+            ],
+            'evRegMultimodal' => [
+                'descEvento' => $this->eventCode[$tpEvent]['desc'],
+                'xRegistro' => $xRegistro,
+                'nDoc' => $nDoc
+            ]
+        ];
+        $body = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            /**
+             * Validate main event structure
+             */
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+            /**
+             * Validate specific event structure
+             */
+            XsdSchema::validate(Xml::arrayToXml([
+                'evRegMultimodal' => $detEvent['evRegMultimodal']
+            ]), "{$this->schemaPath}/evRegMultimodal_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chCTe}-{$tpEvent}-{$nSeqEvent}";
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-eventoCTe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEventoCTe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
+
+                /**
+                 * Save protocol
+                 */
+                if ($response->getExtra('parse.infEvento.cStat') == 135) {
+                    $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
+                    $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
                     $response->addExtra([
                         'parse.procXML' => $canc,
                         'parse.pathXML' => $fileCanc
@@ -813,38 +1109,184 @@ class Cte extends Dfe
 
     /**
      * Sending proof of delivery
+     * Fully implemented
      *
      * @param string $chCTe
      * @param int $nSeqEvent
      * @param array $evCECTe
+     *            array with the following structure:
+     *            [
+     *            'nProt' => '',
+     *            'dhEntrega' => '',
+     *            'nDoc' => '',
+     *            'xNome' => 'Test Name',
+     *            'latitude' => null,
+     *            'longitude' => null,
+     *            'chNFe' => [],
+     *            'base64ce' => 'base64encoded'
+     *            ]
      * @return SystemMessage
      */
-    public function deliveryReceipt(string $chCTe, int $nSeqEvent, array $evCECTe): SystemMessage
+    public function evCECTe(string $chCTe, int $nSeqEvent, array $evCECTe): SystemMessage
     {
+        if (! Variable::nfeAccessKey()->validate($chCTe)) {
+            return new SystemMessage("Invalid CTe key: {$chCTe}", // Message
+            '0', // System code
+            SystemMessage::MSG_ERROR, // System status code
+            false); // System status
+        }
         $initialize = $this->prepare('CteRecepcaoEvento');
         if (! $initialize->isOk()) {
             return $initialize;
         }
+        /**
+         * Check if there is a base64ce value
+         */
+        if (! isset($evCECTe['base64ce']) || // If not exists
+        ! Variable::base64()->validate($evCECTe['base64ce'])) { // If is not a valid base64 string
+            return new SystemMessage("Invalid base64 string for base64ce", // Message
+            '0', // System code
+            SystemMessage::MSG_ERROR, // System status code
+            false); // System status
+        }
+
         $tpEvent = '110180';
+        $infEntrega = [];
+        if (isset($evCECTe['chNFe']) && // Has info
+        is_array($evCECTe['chNFe']) && // Is array
+        ! empty($evCECTe['chNFe'])) {
+            foreach ($evCECTe['chNFe'] as $chNFe) {
+                if (! Variable::nfeAccessKey()->validate($chNFe)) {
+                    return new SystemMessage("Invalid NFe key: {$chNFe}", // Message
+                    '0', // System code
+                    SystemMessage::MSG_ERROR, // System status code
+                    false); // System status
+                }
+                $infEntrega[] = [
+                    'chNFe' => $chNFe
+                ];
+            }
+        }
+        /**
+         * Hash (SHA1) no formato Base64 resultante da concatenação: Chave de acesso do CT-e +
+         * Base64 da imagem capturada da entrega (Exemplo: imagem capturada da assinatura eletrônica, digital do recebedor, foto, etc)
+         * NT 2019_001_Comprovante de Entrega
+         */
+        $hashEntrega = base64_encode(pack('H*', hash('sha1', "{$chCTe}{$evCECTe['base64ce']}")));
+
+        $aEvCECTe = [
+            'descEvento' => $this->eventCode[$tpEvent]['desc'],
+            'nProt' => $evCECTe['nProt'] ?? null,
+            'dhEntrega' => $evCECTe['dhEntrega'] ?? null,
+            'nDoc' => $evCECTe['nDoc'] ?? null,
+            'xNome' => $evCECTe['xNome'] ?? null,
+            'latitude' => $evCECTe['latitude'] ?? null,
+            'longitude' => $evCECTe['longitude'] ?? null,
+            'hashEntrega' => $hashEntrega,
+            'dhHashEntrega' => $evCECTe['dhHashEntrega'] ?? date('c', strtotime('-5 seconds')),
+            'infEntrega' => $infEntrega
+        ];
+        if ($aEvCECTe['latitude'] === null || $aEvCECTe['longitude'] === null) {
+            unset($aEvCECTe['latitude'], $aEvCECTe['longitude']);
+        }
+        if (empty($aEvCECTe['infEntrega'])) {
+            unset($aEvCECTe['infEntrega']);
+        }
         $detEvent = [
             '@attributes' => [
                 'versaoEvento' => $this->urlVersion
             ],
-            'evCECTe' => $evCECTe
+            'evCECTe' => $aEvCECTe
         ];
-        $xmlEvent = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
-        return $this->send($xmlEvent);
+        $body = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            /**
+             * Validate main event structure
+             */
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+            /**
+             * Validate specific event structure
+             */
+            XsdSchema::validate(Xml::arrayToXml([
+                'evCECTe' => $detEvent['evCECTe']
+            ]), "{$this->schemaPath}/evCECTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chCTe}-{$tpEvent}-{$nSeqEvent}";
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-eventoCTe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEventoCTe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
+
+                /**
+                 * Save protocol
+                 */
+                if ($response->getExtra('parse.infEvento.cStat') == 135) {
+                    $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
+                    $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
+                    $response->addExtra([
+                        'parse.procXML' => $canc,
+                        'parse.pathXML' => $fileCanc
+                    ]);
+                    file_put_contents($fileCanc, $canc);
+                }
+            }
+        }
+        return $response;
     }
 
     /**
+     *
      * Proof of delivery cancellation event
+     * Fully implemented
      *
      * @param string $chCTe
      * @param int $nSeqEvent
-     * @param array $evCancCECTe
+     * @param string $nProt
+     * @param string $nProtCE
      * @return SystemMessage
      */
-    public function deliveryReceiptCancel(string $chCTe, int $nSeqEvent, array $evCancCECTe): SystemMessage
+    public function evCancCECTe(string $chCTe, int $nSeqEvent, string $nProt, string $nProtCE): SystemMessage
     {
         $initialize = $this->prepare('CteRecepcaoEvento');
         if (! $initialize->isOk()) {
@@ -855,10 +1297,192 @@ class Cte extends Dfe
             '@attributes' => [
                 'versaoEvento' => $this->urlVersion
             ],
-            'evCancCECTe' => $evCancCECTe
+            'evCancCECTe' => [
+                'descEvento' => $this->eventCode[$tpEvent]['desc'],
+                'nProt' => $nProt,
+                'nProtCE' => $nProtCE
+            ]
         ];
-        $xmlEvent = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
-        return $this->send($xmlEvent);
+        $body = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            /**
+             * Validate main event structure
+             */
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+            /**
+             * Validate specific event structure
+             */
+            XsdSchema::validate(Xml::arrayToXml([
+                'evCancCECTe' => $detEvent['evCancCECTe']
+            ]), "{$this->schemaPath}/evCancCECTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chCTe}-{$tpEvent}-{$nSeqEvent}";
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-eventoCTe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEventoCTe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
+
+                /**
+                 * Save protocol
+                 */
+                if ($response->getExtra('parse.infEvento.cStat') == 135) {
+                    $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
+                    $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
+                    $response->addExtra([
+                        'parse.procXML' => $canc,
+                        'parse.pathXML' => $fileCanc
+                    ]);
+                    file_put_contents($fileCanc, $canc);
+                }
+            }
+        }
+        return $response;
+    }
+
+    /**
+     *
+     * Performance event in disagreement
+     * Fully implemented
+     *
+     * @param string $chCTe
+     * @param int $nSeqEvent
+     * @param string $xObs
+     * @return SystemMessage
+     */
+    public function evPrestDesacordo(string $chCTe, int $nSeqEvent, string $xObs): SystemMessage
+    {
+        $initialize = $this->prepare('CteRecepcaoEvento');
+        if (! $initialize->isOk()) {
+            return $initialize;
+        }
+        $tpEvent = '610110';
+        $detEvent = [
+            '@attributes' => [
+                'versaoEvento' => $this->urlVersion
+            ],
+            'evPrestDesacordo' => [
+                'descEvento' => $this->eventCode[$tpEvent]['desc'],
+                'indDesacordoOper' => 1,
+                'xObs' => $xObs
+            ]
+        ];
+        $body = $this->event($chCTe, $nSeqEvent, $tpEvent, $detEvent);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            /**
+             * Validate main event structure
+             */
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+            /**
+             * Validate specific event structure
+             */
+            XsdSchema::validate(Xml::arrayToXml([
+                'evPrestDesacordo' => $detEvent['evPrestDesacordo']
+            ]), "{$this->schemaPath}/evPrestDesacordo_v{$this->version}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+
+        /**
+         * Send to webservice
+         */
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chCTe}-{$tpEvent}-{$nSeqEvent}";
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-eventoCTe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEventoCTe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
+
+                /**
+                 * Save protocol
+                 */
+                if ($response->getExtra('parse.infEvento.cStat') == 135) {
+                    $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
+                    $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
+                    $response->addExtra([
+                        'parse.procXML' => $canc,
+                        'parse.pathXML' => $fileCanc
+                    ]);
+                    file_put_contents($fileCanc, $canc);
+                }
+            }
+        }
+        return $response;
     }
 
     /**

@@ -15,3 +15,6 @@
 /tests/cte_parser.php
 /tests/mdfe_parser.php
 /tests/cte_base.php
+/tests/mdfe/mdfe_base.php
+/tests/nfe/nfe_base.php
+/tests/cte/cte_base.php

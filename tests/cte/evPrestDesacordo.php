@@ -3,14 +3,15 @@ include 'cte_base.php';
 use Inspire\Dfe\Cte;
 use Inspire\Dfe\Certificate;
 use Inspire\Config\Config;
-use Inspire\Validator\Variable;
-use Inspire\Dfe\Dfe;
-
-// var_dump(Variable::nfeAccessKey()->validate(''));
-// exit;
+use Inspire\Dfe\Cte\ParserResponse;
+use Inspire\Support\Xml\Xml;
+use Inspire\Validator\ {
+    Variable,
+    XsdSchema
+};
 
 /**
- * Cargo Transport CT-e Reception Service configuration and sent
+ * Check current status of CT -e configuration and sent
  */
 try {
     $cte = new Cte([
@@ -25,11 +26,7 @@ try {
         // 'date' => '2021-02-28',
         // 'UF' => '43'
     ], $cert);
-    // echo $cte->sign('', 'infCte', 'Id');
-    // exit;
-    $send = $cte->CteRecepcao('123465789', [
-        'xml'
-    ]);
+    $send = $cte->evPrestDesacordo('[chave]', 7, 'ninindi este documento');
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {

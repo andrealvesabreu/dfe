@@ -94,6 +94,12 @@ class Cte extends Base
                     '@attributes',
                     'infProt.@attributes'
                 ]);
+                /**
+                 * Adding control info
+                 */
+                Arrays::set($ct, 'cType', self::$messages[$ct['infProt']['cStat']]['type']);
+                Arrays::set($ct, 'xReason', self::$messageType[$ct['cType']]);
+                Arrays::set($ct, 'bStat', $ct['cType'] == 1);
             }
         } else {
             Arrays::set($aData['protCTe'], 'versao', Arrays::get($aData, 'protCTe.@attributes.versao'));
@@ -101,6 +107,12 @@ class Cte extends Base
                 'protCTe.@attributes',
                 'protCTe.infProt.@attributes'
             ]);
+            /**
+             * Adding control info
+             */
+            Arrays::set($aData, 'protCTe.cType', self::$messages[Arrays::get($aData, 'protCTe.infProt.cStat')]['type']);
+            Arrays::set($aData, 'protCTe.xReason', self::$messageType[Arrays::get($aData, 'protCTe.cType')]);
+            Arrays::set($aData, 'protCTe.bStat', Arrays::get($aData, 'protCTe.cType') == 1);
             $aData['protCTe'] = [
                 $aData['protCTe']
             ];
@@ -554,7 +566,7 @@ class Cte extends Base
             'type' => 0,
             'message' => 'Rejeição: Erro na composição do Campo ID'
         ],
-        '228' => [
+        '228' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Data de Emissão muito atrasada'
         ],
@@ -1535,7 +1547,7 @@ class Cte extends Base
             'type' => 0,
             'message' => 'Rejeição: Falha no Schema XML específico para o evento'
         ],
-        '631' => [
+        '631' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Duplicidade de evento[nProt:999999999999999][dhRegEvento: AAAA-MM-DDTHH:MM:SS TZD]'
         ],
@@ -1715,8 +1727,8 @@ class Cte extends Base
             'type' => 0,
             'message' => 'Rejeição: Consumo Indevido[Descrição: XXXXXXXXXXXXXXXXXXXXXXXXXXXX]'
         ],
-        '679' => [
-            'type' => 0,
+        '679' => [ // Verified
+            'type' => 7,
             'message' => 'Rejeição: O modal do CT-e deve ser Multimodal para Evento Registros do Multimodal'
         ],
         '680' => [
@@ -1991,8 +2003,8 @@ class Cte extends Base
             'type' => 0,
             'message' => 'Rejeição: Os documentos referenciados devem estar preenchidos para excesso de bagagem'
         ],
-        '755' => [
-            'type' => 0,
+        '755' => [ // Verified
+            'type' => 7,
             'message' => 'Rejeição: Autor do evento prestação do serviço em desacordo deve ser o tomador do serviço do CT-e'
         ],
         '756' => [

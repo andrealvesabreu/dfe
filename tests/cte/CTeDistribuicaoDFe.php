@@ -27,7 +27,7 @@ try {
     \Inspire\Dfe\Parser\Cte::getDistDfeSchemas([
         'procCTe'
     ]);
-    $send = $cte->CTeDistribuicaoDFe(12590);
+    $send = $cte->CTeDistribuicaoDFe(12640);
 //     $send = $cte->CTeDistribuicaoDFe(null, 12651);
     if ($send->isOk()) {
         var_dump($send->getExtra());
