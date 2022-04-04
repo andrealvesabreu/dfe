@@ -26,10 +26,10 @@ use Inspire\Support\ {
  * Web Service - NfeRetAutorizacao
  * Web Service - NfeInutilizacao
  * Web Service - NfeConsulta
- * Web Service - NfeStatusServico
+ * Web Service - NfeStatusServico OK
  * Web Service - NfeConsultaCadastro
  * Web Service - NFeRecepcaoEvento
- * Web Service - NFeDistribuicaoDFe
+ * Web Service - NFeDistribuicaoDFe OK
  *
  * @author aalves
  */
@@ -68,6 +68,9 @@ class Nfe extends Dfe
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -76,23 +79,30 @@ class Nfe extends Dfe
          */
         $paths = $response->getExtra('paths');
         if ($paths !== null) {
-            $dateWs = date('Y_m_d-H_i_s'); // substr($response->getExtra('parse.dhRecbto'), 0, 19);
-            $baseName = str_replace([
-                '-',
-                'T',
-                ':'
-            ], [
-                '_',
-                '-',
-                '_'
-            ], "{$response->getExtra('parse.cUF')}-{$dateWs}");
-            // Save sent file
-            $fileSent = "{$paths['request']}/{$baseName}-consStatServNFe.xml";
+            $baseName = date('Y_m_d-H_i_s');
+            /**
+             * Save file sent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-consStatServ.xml";
             file_put_contents($fileSent, $body->getXml());
-            // Save response file, if server has processed request succefully
+            /**
+             * Update request path to include file name
+             */
+            $response->addExtra([
+                'paths.request' => $fileSent
+            ]);
+            /**
+             * Save response file, if server has processed request succefully
+             */
             if ($response->isOk()) {
-                $fileResponse = "{$paths['response']}/{$baseName}-retConsStatServNFe.xml";
-                file_put_contents($fileResponse, $response->getExtra('xml'));
+                $fileResponse = "{$paths['response']}/{$baseName}-retConsStatServ.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->addExtra([
+                    'paths.response' => $fileResponse
+                ]);
             }
         }
         return $response;
@@ -172,6 +182,9 @@ class Nfe extends Dfe
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body, true);
         /**
          * Save files
@@ -182,9 +195,7 @@ class Nfe extends Dfe
         if ($paths !== null) {
             $baseName = "{$this->CNPJ}_{$pathPart}_{$response->getExtra('parse.cUF')}_" . date('Y_m_d-H_i_s');
             /**
-             * Save sent file
-             *
-             * @var string $fileSent
+             * Save file sent
              */
             $fileSent = "{$paths['request']}/{$baseName}-distDFeInt.xml";
             file_put_contents($fileSent, $body->getXml());
