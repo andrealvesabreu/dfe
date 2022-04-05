@@ -21,7 +21,8 @@ return [
             'name' => 'nfe', // DFe type. For a while, it can be only cte, nfe, mdfe or gnre
             'paths' => require 'dfe/nfe_paths.php', // Including a file. Could be set as an array or import file
             '400' => require 'dfe/nfe_400.php', // Including a file. Could be set as an array or import file
-            '101' => require 'dfe/nfe_101.php' // DFe distibuition service is availibe only in version 1.01
+            '101' => require 'dfe/nfe_101.php', // DFe distibuition service is availibe only in version 1.01
+            '100' => require 'dfe/nfe_100.php' // DFe distibuition service is availibe only in version 1.01
         ]
     ]
 ];
