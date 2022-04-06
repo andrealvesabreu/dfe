@@ -20,7 +20,7 @@ try {
         'tpAmb' => 1,
         'CNPJ' => $CNPJ,
         'xUFAut' => 'RS',
-        'schemaPath' => ROOT_DIR . '/tests/schemas/MDFeDistDFe_100'
+        'schemaBasePath' => ROOT_DIR . '/tests/schemas'
         // Optionals
         // 'date' => '2021-02-28'
         // 'UF' => '43',
@@ -28,7 +28,7 @@ try {
 //     \Inspire\Dfe\Parser\Mdfe::getDistDfeSchemas([
 //         'procEventoMDFe'
 //     ]);
-    $send = $mdfe->MDFeDistribuicaoDFe(null, 46);
+    $send = $mdfe->MDFeDistribuicaoDFe('[NSU]');
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {

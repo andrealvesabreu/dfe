@@ -117,11 +117,14 @@ class Mdfe extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consReciMDFe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consReciMDFe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -307,11 +310,14 @@ class Mdfe extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consSitMDFe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consSitMDFe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -389,6 +395,18 @@ class Mdfe extends Dfe
         $tag = strlen($doc) == 11 ? 'CPF' : 'CNPJ';
         Arrays::set($body, "consMDFeNaoEnc.{$tag}", $doc);
         $body = Xml::arrayToXml($body, null, true);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consMDFeNaoEnc_v{$this->urlVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -451,6 +469,18 @@ class Mdfe extends Dfe
             ]
         ];
         $body = Xml::arrayToXml($body, null, true);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consStatServMDFe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
@@ -540,11 +570,14 @@ class Mdfe extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/distDFeInt_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/distDFeInt_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body);
         /**
          * Save files
