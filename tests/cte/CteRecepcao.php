@@ -20,13 +20,13 @@ try {
         'xUF' => 'RS',
         'tpAmb' => 2,
         'CNPJ' => $CNPJ,
-        'schemaPath' => ROOT_DIR . '/tests/schemas/CTe3.00a'
+        'schemaBasePath' => ROOT_DIR . '/tests/schemas'
         // Optionals
         // 'date' => '2021-02-28',
         // 'UF' => '43'
     ], $cert);
-    // echo $cte->sign('', 'infCte', 'Id');
-    // exit;
+//     echo $cte->sign('', 'infCte', 'Id');
+//     exit;
     $send = $cte->CteRecepcao('123465789', [
         'xml'
     ]);

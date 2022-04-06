@@ -173,13 +173,6 @@ class Cte extends Base
          * $aData array
          */
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retConsSitCTe');
-        var_dump($aData);
-        /**
-         * Forgetting all @attributes
-         */
-        Arrays::forget($aData, [
-            '@attributes'
-        ]);
         $parser = [
             'versao' => Arrays::get($aData, '@attributes.versao'),
             'tpAmb' => Arrays::get($aData, 'tpAmb'),
@@ -188,6 +181,12 @@ class Cte extends Base
             'xMotivo' => Arrays::get($aData, 'xMotivo'),
             'cUF' => Arrays::get($aData, 'cUF')
         ];
+        /**
+         * Forgetting all @attributes
+         */
+        Arrays::forget($aData, [
+            '@attributes'
+        ]);
         /**
          * Adding control info
          */
@@ -470,8 +469,8 @@ class Cte extends Base
             'type' => 5,
             'message' => 'Rejeição: Emissor não habilitado para emissão do CT-e'
         ],
-        '204' => [
-            'type' => 0,
+        '204' => [ // Verified
+            'type' => 7,
             'message' => 'Rejeição: Duplicidade de CT-e[nProt:999999999999999][dhAut: AAAA-MM-DDTHH:MM:SS TZD]'
         ],
         '205' => [
@@ -1219,8 +1218,8 @@ class Cte extends Base
             'type' => 0,
             'message' => 'Rejeição: Chave de acesso de CT-e anterior inválida (UF inválida)'
         ],
-        '539' => [
-            'type' => 0,
+        '539' => [ // Verified
+            'type' => 7,
             'message' => 'Rejeição: Duplicidade de CT-e, com diferença na Chave de Acesso [chCTe: [9999999999999999999999999999999999999999999][nProt:999999999999999][dhAut: AAAA-MM-DDTHH:MM:SS TZD]'
         ],
         '540' => [
@@ -2234,6 +2233,54 @@ class Cte extends Base
         '813' => [
             'type' => 0,
             'message' => 'Rejeição: Tipo de Documento inválido para operação interestadual'
+        ],
+        '860' => [
+            'type' => 0,
+            'message' => 'Rejeição: Chave de acesso da NF-e indicada no comprovante de entrega inválida'
+        ],
+        '861' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e em duplicidade no evento comprovante de entrega'
+        ],
+        '862' => [
+            'type' => 0,
+            'message' => 'Rejeição: Vedado o cancelamento quando houver evento de Comprovante de Entrega associado'
+        ],
+        '863' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e já possui comprovante de entrega para este CT-e'
+        ],
+        '864' => [
+            'type' => 0,
+            'message' => 'Rejeição: NF-e não possui relação com este CT-e'
+        ],
+        '865' => [
+            'type' => 0,
+            'message' => 'Rejeição: Comprovante de entrega deve relacionar NF-e para CT-e de tipo de serviço Normal'
+        ],
+        '866' => [
+            'type' => 0,
+            'message' => 'Rejeição: Protocolo do evento a ser cancelado não existe, não está associado ao CT-e ou já está cancelado'
+        ],
+        '869' => [
+            'type' => 0,
+            'message' => 'Rejeição: Evento não permitido para CT-e Complementar ou Anulação'
+        ],
+        '870' => [
+            'type' => 0,
+            'message' => 'Rejeição: Não é permitido mais de um comprovante de entrega para CT-e (exceto CT-e Globalizado)'
+        ],
+        '871' => [
+            'type' => 0,
+            'message' => 'Rejeição: Comprovante de entrega não pode informar NF-e para CT-e de tipo de serviço diferente de Normal'
+        ],
+        '872' => [
+            'type' => 0,
+            'message' => 'Rejeição: Data e hora da entrega inválida'
+        ],
+        '873' => [
+            'type' => 0,
+            'message' => 'Rejeição: Data e hora do hash do comprovante de entrega inválida'
         ],
         '999' => [
             'type' => 0,

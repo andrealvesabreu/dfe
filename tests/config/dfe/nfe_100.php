@@ -16,7 +16,7 @@ return [
         ],
         'AN' => [
             'RecepcaoEvento' => [
-                'method' => "nfeRecepcaoEvento",
+                'method' => "nfeRecepcaoEventoNF",
                 'operation' => "NFeRecepcaoEvento4",
                 'version' => "1.00",
                 'url' => 'https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx'
@@ -146,7 +146,7 @@ return [
         ],
         'AN' => [
             'RecepcaoEvento' => [
-                'method' => "nfeRecepcaoEvento",
+                'method' => "nfeRecepcaoEventoNF",
                 'operation' => "NFeRecepcaoEvento4",
                 'version' => "1.00",
                 'url' => 'https://hom.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx'

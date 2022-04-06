@@ -24,7 +24,6 @@ class Mdfe extends Base
      */
     public static function MDFeRecepcao(Xml $xml): array
     {
-        var_dump($xml->getXml());
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retEnviMDFe');
         Arrays::forget($aData, [
             '@attributes'

@@ -19,12 +19,12 @@ try {
         'xUF' => 'RS',
         'tpAmb' => 2,
         'CNPJ' => $CNPJ,
-        'schemaPath' => ROOT_DIR . '/tests/schemas/CTe3.00a'
+        'schemaBasePath' => ROOT_DIR . '/tests/schemas'
         // Optionals
         // 'date' => '2021-02-28',
         // 'UF' => '43'
     ], $cert);
-    $send = $cte->CteInutilizacao(999, 999999994, 999999994, 'Test Invalidate CT -e numbering');
+    $send = $cte->CteInutilizacao(999, '[nini]', '[nfim]', 'Test Invalidate CT -e numbering');
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {

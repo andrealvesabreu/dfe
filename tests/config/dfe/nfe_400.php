@@ -52,7 +52,7 @@ return [
         ],
         'AN' => [
             'RecepcaoEvento' => [
-                'method' => "nfeRecepcaoEvento",
+                'method' => "nfeRecepcaoEventoNF",
                 'operation' => "NFeRecepcaoEvento4",
                 'version' => "1.00",
                 'url' => 'https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx'
@@ -60,7 +60,7 @@ return [
             'NfeDistribuicaoDFe' => [
                 'method' => "nfeDistDFeInteresse",
                 'operation' => "NFeDistribuicaoDFe",
-                'version' => "1.00",
+                'version' => "1.01",
                 'url' => 'https://www1.nfe.fazenda.gov.br/NFeDistribuicaoDFe/NFeDistribuicaoDFe.asmx'
             ],
             'NfeConsultaDest' => [
@@ -746,7 +746,7 @@ return [
         ],
         'AN' => [
             'RecepcaoEvento' => [
-                'method' => "nfeRecepcaoEvento",
+                'method' => "nfeRecepcaoEventoNF",
                 'operation' => "NFeRecepcaoEvento4",
                 'version' => "1.00",
                 'url' => 'https://hom.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx'

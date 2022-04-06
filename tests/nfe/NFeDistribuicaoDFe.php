@@ -13,13 +13,13 @@ use Inspire\Support\Xml\Xml;
 try {
     $nfe = new Nfe([
         'mod' => '55',
-        'version' => '1.01',
+        'version' => '4.00',
         'saveFiles' => true,
         'xUF' => 'RS',
         'tpAmb' => 1,
         'CNPJ' => $CNPJ,
         'xUFAut' => 'AN',
-        'schemaPath' => ROOT_DIR . '/tests/schemas/NFeDistDFe_102'
+        'schemaBasePath' => ROOT_DIR . '/tests/schemas'
         // Optionals
         // 'date' => '2021-02-28'
         // 'UF' => '43',
@@ -27,7 +27,7 @@ try {
     \Inspire\Dfe\Parser\Nfe::getDistDfeSchemas([
         'procNFe'
     ]);
-    $send = $nfe->NfeDistribuicaoDFe(null, null,'[chave]');
+    $send = $nfe->NfeDistribuicaoDFe(null, null, '[chave]');
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {

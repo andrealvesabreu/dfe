@@ -13,18 +13,18 @@ use Inspire\Support\Xml\Xml;
 try {
     $nfe = new Nfe([
         'mod' => '55',
-        'version' => '1.00',
+        'version' => '4.00',
         'saveFiles' => true,
-        'xUF' => 'SC',
+        'xUF' => 'AN',
         'tpAmb' => 1,
         'CNPJ' => $CNPJ,
-        // 'xUFAut' => 'AN',
-        'schemaPath' => ROOT_DIR . '/tests/schemas/Evento_ManifestaDest_PL_v101'
+        'xUFAut' => 'AN',
+        'schemaBasePath' => ROOT_DIR . '/tests/schemas'
         // Optionals
         // 'date' => '2021-02-28'
         // 'UF' => '43',
     ], $cert);
-    $send = $nfe->confRecebto('[chave]', '[sq]', '[evento]', '[xJust]');
+    $send = $nfe->confRecebto('[chave]', '1', '[tpEvent]', 'Ciencia da operacao');
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {

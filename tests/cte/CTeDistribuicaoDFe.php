@@ -13,13 +13,13 @@ use Inspire\Support\Xml\Xml;
 try {
     $cte = new Cte([
         'mod' => '57',
-        'version' => '1.00',
+        'version' => '3.00',
         'saveFiles' => true,
         'xUF' => 'RS',
         'tpAmb' => 1,
         'CNPJ' => $CNPJ,
         'xUFAut' => 'AN',
-        'schemaPath' => ROOT_DIR . '/tests/schemas/CTeDistDFe_100'
+        'schemaBasePath' => ROOT_DIR . '/tests/schemas'
         // Optionals
         // 'date' => '2021-02-28'
         // 'UF' => '43',

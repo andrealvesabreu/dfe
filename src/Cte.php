@@ -70,7 +70,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/enviCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/enviCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -169,7 +169,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/CTeOS_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/CTeOS_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -265,7 +265,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consReciCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consReciCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -469,7 +469,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/inutCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/inutCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -564,7 +564,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consSitCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consSitCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -638,7 +638,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consStatServCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consStatServCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -783,7 +783,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -792,7 +792,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evCCeCTe' => $detEvent['evCCeCTe']
-            ]), "{$this->schemaPath}/evCCeCTe_v{$this->version}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evCCeCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -893,7 +893,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -902,7 +902,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evCancCTe' => $detEvent['evCancCTe']
-            ]), "{$this->schemaPath}/evCancCTe_v{$this->version}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evCancCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1038,7 +1038,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1047,7 +1047,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evRegMultimodal' => $detEvent['evRegMultimodal']
-            ]), "{$this->schemaPath}/evRegMultimodal_v{$this->version}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evRegMultimodal_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1206,7 +1206,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1215,7 +1215,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evCECTe' => $detEvent['evCECTe']
-            ]), "{$this->schemaPath}/evCECTe_v{$this->version}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evCECTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1311,7 +1311,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1320,7 +1320,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evCancCECTe' => $detEvent['evCancCECTe']
-            ]), "{$this->schemaPath}/evCancCECTe_v{$this->version}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evCancCECTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1415,7 +1415,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1424,12 +1424,11 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evPrestDesacordo' => $detEvent['evPrestDesacordo']
-            ]), "{$this->schemaPath}/evPrestDesacordo_v{$this->version}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evPrestDesacordo_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
         }
-
         /**
          * Send to webservice
          */
@@ -1537,11 +1536,14 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/distDFeInt_v{$this->version}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/distDFeInt_v{$this->urlVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
         }
+        /**
+         * Send to webservice
+         */
         $response = $this->send($body, true);
         /**
          * Save files

@@ -94,6 +94,34 @@ class Dfe
                 '67' => 'evPrestDesacordo'
             ],
             'desc' => 'Prestação do Serviço em Desacordo'
+        ],
+        '210200' => [
+            'schema' => [
+                '55' => 'e210200',
+                '65' => 'e210200'
+            ],
+            'desc' => 'Confirmacao da Operacao'
+        ],
+        '210210' => [
+            'schema' => [
+                '55' => 'e210210',
+                '65' => 'e210210'
+            ],
+            'desc' => 'Ciencia da Operacao'
+        ],
+        '210220' => [
+            'schema' => [
+                '55' => 'e210220',
+                '65' => 'e210220'
+            ],
+            'desc' => 'Desconhecimento da Operacao'
+        ],
+        '210240' => [
+            'schema' => [
+                '55' => 'e210240',
+                '65' => 'e210240'
+            ],
+            'desc' => 'Operacao nao Realizada'
         ]
     ];
 
@@ -105,7 +133,8 @@ class Dfe
     protected array $servicesAvailable = [
         '55' => [
             'NfeStatusServico',
-            'NfeDistribuicaoDFe'
+            'NfeDistribuicaoDFe',
+            'RecepcaoEvento'
         ],
         '57' => [
             'CteRecepcao',
@@ -477,6 +506,14 @@ class Dfe
     protected ?string $schemaPath = null;
 
     /**
+     * Base dir for XSD schemas
+     * System will validate schemas if it is set different of null
+     *
+     * @var string|null
+     */
+    private ?string $schemaBasePath = null;
+
+    /**
      * URL variables of authorizing webservices
      */
 
@@ -710,12 +747,17 @@ class Dfe
         else if (! isset($this->servicesAvailable[$config['mod']]) || empty($this->servicesAvailable[$config['mod']])) {
             throw new \Exception("There is no services available for document model {$config['mod']}");
         } /**
+         * Check if schema path is set
+         */
+        else if (! isset($config['schemaBasePath'])) {
+            throw new \Exception("Please provide a chema base path to pre validate your messages.");
+        } /**
          * Check if schema path is valid
          */
-        else if (isset($config['schemaPath']) && (! file_exists($config['schemaPath']) || //
-        ! is_dir($config['schemaPath']) || //
-        ! is_readable($config['schemaPath']))) {
-            throw new \Exception("Schema path '{$config['schemaPath']}' is not valid.");
+        else if (! file_exists($config['schemaBasePath']) || //
+        ! is_dir($config['schemaBasePath']) || //
+        ! is_readable($config['schemaBasePath'])) {
+            throw new \Exception("Schema path '{$config['schemaBasePath']}' is not valid.");
         }
         /**
          * Clear information about authorizing webservice
@@ -779,7 +821,6 @@ class Dfe
             }
         }
         $this->xMod = $this->listMod[$this->mod];
-
         /**
          * Defines the authorizing webservice to be used
          */
@@ -816,6 +857,10 @@ class Dfe
                 $this->urlNamespace = sprintf("%s/wsdl/%s", $this->urlPortal, $this->urlOperation);
                 break;
         }
+        /**
+         * Set schema path
+         */
+        $this->schemaPath = sprintf("%s/%s/%s", $this->schemaBasePath, $this->xMod, Strings::integer($this->urlVersion));
         return new SystemMessage("OK", // Message
         '1', // System code
         SystemMessage::MSG_OK, // System status code
@@ -942,11 +987,16 @@ class Dfe
              * Events webservices
              */
             case 'CteRecepcaoEvento':
+            case 'RecepcaoEvento':
                 // case 'MDFeRecepcaoEvento':
                 $match = [];
                 if (preg_match('/tpEvento>(.*?)<\/tpEvento/', $xml->getXml(), $match) == 1) {
                     if (isset($this->eventCode[$match[1]])) {
                         switch ($this->mod) {
+                            case 55:
+                            case 65:
+                                $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.RecepcaoEvento.{$this->eventCode[$match[1]]['schema'][$this->mod]}");
+                                break;
                             case 57:
                             case 67:
                                 $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.CteRecepcaoEvento.{$this->eventCode[$match[1]]['schema'][$this->mod]}");
@@ -959,7 +1009,7 @@ class Dfe
                         throw new \Exception("Invalid event type for {$this->xMod}: {$match[1]}");
                     }
                     if ($resp['response'] === null) {
-                        throw new \Exception("Invalid configuration to store event type {$this->eventCode[$match[1]]} for {$this->xMod}");
+                        throw new \Exception("Invalid configuration to store event type {$this->eventCode[$match[1]]['desc']} for {$this->xMod}");
                     }
                     $saveDocument = true;
                 }

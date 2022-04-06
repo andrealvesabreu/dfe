@@ -18,7 +18,7 @@ try {
         'xUF' => 'RS',
         'tpAmb' => 1,
         'CNPJ' => $CNPJ,
-        'schemaPath' => ROOT_DIR . '/tests/schemas/CTe3.00a'
+        'schemaBasePath' => ROOT_DIR . '/tests/schemas'
         // Optionals
         // 'date' => '2021-02-28',
         // 'UF' => '43'
