@@ -131,6 +131,13 @@ class Dfe
      * @var array
      */
     protected array $servicesAvailable = [
+        '23' => [
+            'GnreRecepcaoLote',
+            'GnreResultadoLote',
+            'GnreLoteRecepcaoConsulta',
+            'GnreResultadoLoteConsulta',
+            'GnreConfigUF'
+        ],
         '55' => [
             'NfeStatusServico',
             'NfeDistribuicaoDFe',
@@ -201,7 +208,7 @@ class Dfe
                 'SC' => 'PE',
                 'SE' => 'PE',
                 'SP' => 'PE',
-                'TO' => 'AN'
+                'TO' => 'PE'
             ]
         ],
         '55' => [
@@ -860,7 +867,11 @@ class Dfe
         /**
          * Set schema path
          */
-        $this->schemaPath = sprintf("%s/%s/%s", $this->schemaBasePath, $this->xMod, Strings::integer($this->urlVersion));
+        if ($this->mod == 23) {
+            $this->schemaPath = sprintf("%s/%s/%s", $this->schemaBasePath, $this->xMod, Strings::integer($this->version));
+        } else {
+            $this->schemaPath = sprintf("%s/%s/%s", $this->schemaBasePath, $this->xMod, Strings::integer($this->urlVersion));
+        }
         return new SystemMessage("OK", // Message
         '1', // System code
         SystemMessage::MSG_OK, // System status code
@@ -876,8 +887,6 @@ class Dfe
     public function getHeader(): ?Xml
     {
         switch ($this->mod) {
-            case 23:
-                return new Xml("<gnreCabecMsg xmlns=\"http://www.gnre.pe.gov.br/wsdl/{$this->urlMethod}\"><versaoDados>{$this->urlVersion}</versaoDados></gnreCabecMsg>");
             case 55:
             case 65:
                 return new Xml("<nfeCabecMsg xmlns=\"{$this->urlNamespace}\"><cUF>{$this->cUF}</cUF><versaoDados>{$this->urlVersion}</versaoDados></nfeCabecMsg>");
@@ -934,6 +943,11 @@ class Dfe
          * If there is no problem to connect server
          */
         if ($result->isOk()) {
+            if (method_exists($this, 'responseFilter')) {
+                $result->addExtra([
+                    'data.received' => $this->responseFilter($result->getExtra('data.received'))
+                ]);
+            }
             /**
              * If it's all ok till then, add paths to save files
              * Set paths to save files
@@ -1048,6 +1062,19 @@ class Dfe
                     'signed' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.signed")
                 ];
                 $saveDocument = true;
+                break;
+            /**
+             * GNRE methods
+             */
+            case 'GnreRecepcaoLote':
+            case 'GnreResultadoLote':
+            case 'GnreLoteRecepcaoConsulta':
+            case 'GnreResultadoLoteConsulta':
+            case 'GnreConfigUF':
+                $resp = [
+                    'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
+                    'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response")
+                ];
                 break;
             /**
              * Another webservices
