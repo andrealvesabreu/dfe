@@ -13,7 +13,7 @@
 	"license" : "MIT",
 	"require" : {
 		"php" : ">=7.4",
-		"spatie/array-to-xml" : "~2.16.0",
+		"spatie/array-to-xml" : "2.16.0",
 		"inspire/validator" : "~0.1",
 		"inspire/core" : "~0.1"
 	},

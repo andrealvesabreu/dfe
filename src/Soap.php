@@ -196,14 +196,14 @@ class Soap
                  *
                  * @var \Inspire\Support\Message\System\SystemMessage $response
                  */
-                $response = new SystemMessage('OK', // Message
+                return new SystemMessage('OK', // Message
                 Soap::OK, // System code
                 SystemMessage::MSG_OK, // System status code
-                true); // System status (success)
-                /**
-                 * Add all extra data to message
-                 */
-                $response->addExtra([
+                true, // System status (success)
+                [
+                    /**
+                     * Add all extra data to message
+                     */
                     'soap' => [
                         'sent' => $request->__getLastRequest(),
                         'received' => $request->__getLastResponse()
@@ -213,7 +213,6 @@ class Soap
                         'received' => $respXML
                     ]
                 ]);
-                return $response;
             } catch (\Exception $ex) {
                 return new SystemMessage($ex->getMessage(), // Message
                 Soap::SOAP_ERROR, // System code

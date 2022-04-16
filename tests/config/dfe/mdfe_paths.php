@@ -1,6 +1,6 @@
 <?php
 /**
- * SEFAZ CTe System WS list
+ * SEFAZ MDFe System WS list
  *
  * @author aalves
  */
@@ -18,12 +18,26 @@ return [
     '1' => [
         'signed' => ROOT_DIR . '/storage/xmls/mdfe/:CNPJ/:YEAR:MONTH/producao/assinadas',
         'authorized' => ROOT_DIR . '/storage/xmls/mdfe/:CNPJ/:YEAR:MONTH/producao/validadas',
-        'event' => [
-            // "Evento de cancelamento de MDFe"
-            'cancel' => [
-                'request' => ROOT_DIR . '/storage/xmls/mdfe/eventos/producao/:CNPJ/:YEAR:MONTH/cancel',
-                'response' => ROOT_DIR . '/storage/xmls/mdfe/eventos/producao/:CNPJ/:YEAR:MONTH/cancel',
-                'document' => ROOT_DIR . '/storage/xmls/mdfe/:CNPJ/:YEAR:MONTH/producao/canceladas'
+        'MDFeRecepcaoEvento' => [
+            'evIncCondutorMDFe' => [ // Include driver
+                'request' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/incluirmotorista',
+                'response' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/incluirmotorista',
+                'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/producao/incluirmotorista'
+            ],
+            'evInclusaoDFeMDFe' => [ // Include DFe
+                'request' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/incluirdfe',
+                'response' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/incluirdfe',
+                'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/producao/incluirdfe'
+            ],
+            'evCancMDFe' => [ // Cancel MDFe
+                'request' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/cancelamento',
+                'response' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/cancelamento',
+                'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/producao/cancelamento'
+            ],
+            'evEncMDFe' => [ // finish MDFe
+                'request' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/encerramento',
+                'response' => ROOT_DIR . '/storage/xmls/cte/eventos/producao/:CNPJ/:YEAR:MONTH/encerramento',
+                'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/producao/encerramento'
             ]
         ],
         'MDFeRecepcao' => [
@@ -58,12 +72,26 @@ return [
     '2' => [
         'signed' => ROOT_DIR . '/storage/xmls/mdfe/:CNPJ/:YEAR:MONTH/homologacao/assinadas',
         'authorized' => ROOT_DIR . '/storage/xmls/mdfe/:CNPJ/:YEAR:MONTH/homologacao/validadas',
-        'event' => [
-            // "Evento de cancelamento de MDFe"
-            'cancel' => [
-                'request' => ROOT_DIR . '/storage/xmls/mdfe/eventos/homologacao/:CNPJ/:YEAR:MONTH/cancel',
-                'response' => ROOT_DIR . '/storage/xmls/mdfe/eventos/homologacao/:CNPJ/:YEAR:MONTH/cancel',
-                'document' => ROOT_DIR . '/storage/xmls/mdfe/:CNPJ/:YEAR:MONTH/homologacao/canceladas'
+        'MDFeRecepcaoEvento' => [
+            'evIncCondutorMDFe' => [ // Include driver
+                'request' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/incluirmotorista',
+                'response' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/incluirmotorista',
+                'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/homologacao/incluirmotorista'
+            ],
+            'evInclusaoDFeMDFe' => [ // Include DFe
+                'request' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/incluirdfe',
+                'response' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/incluirdfe',
+                'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/homologacao/incluirdfe'
+            ],
+            'evCancMDFe' => [ // Cancel MDFe
+                'request' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/cancelamento',
+                'response' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/cancelamento',
+                'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/homologacao/cancelamento'
+            ],
+            'evEncMDFe' => [ // finish MDFe
+                'request' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/encerramento',
+                'response' => ROOT_DIR . '/storage/xmls/cte/eventos/homologacao/:CNPJ/:YEAR:MONTH/encerramento',
+                'document' => ROOT_DIR . '/storage/xmls/cte/:CNPJ/:YEAR:MONTH/homologacao/encerramento'
             ]
         ],
         'MDFeRecepcao' => [

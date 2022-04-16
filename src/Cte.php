@@ -70,7 +70,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/enviCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/enviCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -104,9 +104,7 @@ class Cte extends Dfe
             /**
              * Update document path to include all signed files as array
              */
-            $response->addExtra([
-                'paths.document' => $signedDocsPaths
-            ]);
+            $response->setExtra('paths.document', $signedDocsPaths);
             $baseName = "{$idLot}-" . date('Y_m_d-H_i_s');
             /**
              * Save sent file
@@ -118,9 +116,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -130,9 +126,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -169,7 +163,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/CTeOS_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/CTeOS_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -203,9 +197,7 @@ class Cte extends Dfe
             /**
              * Update document path to include all signed files as array
              */
-            $response->addExtra([
-                'paths.document' => $signedDocsPaths
-            ]);
+            $response->setExtra('paths.document', $signedDocsPaths);
             $baseName = "{$idLot}-" . date('Y_m_d-H_i_s');
             /**
              * Save sent file
@@ -217,9 +209,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -229,9 +219,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -265,7 +253,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consReciCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consReciCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -292,9 +280,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -304,9 +290,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
                 /**
                  * If webservice provided a response
                  */
@@ -403,9 +387,7 @@ class Cte extends Dfe
                                     file_put_contents($procCTeFile, $procXML);
                                     $protCTe['procXML'] = $procXML;
                                     $protCTe['pathXML'] = $procCTeFile;
-                                    $response->addExtra([
-                                        "parse.protCTe.{$cteKey}" => $protCTe
-                                    ]);
+                                    $response->setExtra("parse.protCTe.{$cteKey}", $protCTe);
                                     /**
                                      * Set the right document on signed file to skip invalid data
                                      */
@@ -469,7 +451,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/inutCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/inutCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -496,9 +478,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -508,9 +488,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
                 /**
                  * Save protocol
                  */
@@ -518,7 +496,7 @@ class Cte extends Dfe
                     // code 682 could be used too, when number is already invalidated
                     $inut = "<procInutCTe versao=\"{$response->getExtra('parse.infInut.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procInutCTe>";
                     $fileInut = "{$paths['document']}/{$response->getExtra('parse.infInut.nProt')}-procInutCTe.xml";
-                    $response->addExtra([
+                    $response->setExtras([
                         'parse.procXML' => $inut,
                         'parse.pathXML' => $fileInut
                     ]);
@@ -564,7 +542,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consSitCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consSitCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -591,9 +569,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -603,9 +579,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -638,7 +612,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consStatServCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consStatServCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -665,9 +639,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -677,9 +649,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -783,7 +753,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -792,7 +762,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evCCeCTe' => $detEvent['evCCeCTe']
-            ]), "{$this->schemaPath}/evCCeCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evCCeCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -819,9 +789,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -831,9 +799,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
 
                 /**
                  * Save protocol
@@ -841,7 +807,7 @@ class Cte extends Dfe
                 if ($response->getExtra('parse.infEvento.cStat') == 135) {
                     $CCe = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
                     $fileCC = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
-                    $response->addExtra([
+                    $response->setExtras([
                         'parse.procXML' => $CCe,
                         'parse.pathXML' => $fileCC
                     ]);
@@ -893,7 +859,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -902,7 +868,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evCancCTe' => $detEvent['evCancCTe']
-            ]), "{$this->schemaPath}/evCancCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evCancCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -929,9 +895,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -941,9 +905,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
 
                 /**
                  * Save protocol
@@ -951,7 +913,7 @@ class Cte extends Dfe
                 if ($response->getExtra('parse.infEvento.cStat') == 135) {
                     $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
                     $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
-                    $response->addExtra([
+                    $response->setExtras([
                         'parse.procXML' => $canc,
                         'parse.pathXML' => $fileCanc
                     ]);
@@ -1038,7 +1000,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1047,7 +1009,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evRegMultimodal' => $detEvent['evRegMultimodal']
-            ]), "{$this->schemaPath}/evRegMultimodal_v{$this->urlVersion}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evRegMultimodal_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1074,9 +1036,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -1086,9 +1046,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
 
                 /**
                  * Save protocol
@@ -1096,7 +1054,7 @@ class Cte extends Dfe
                 if ($response->getExtra('parse.infEvento.cStat') == 135) {
                     $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
                     $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
-                    $response->addExtra([
+                    $response->setExtras([
                         'parse.procXML' => $canc,
                         'parse.pathXML' => $fileCanc
                     ]);
@@ -1206,7 +1164,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1215,7 +1173,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evCECTe' => $detEvent['evCECTe']
-            ]), "{$this->schemaPath}/evCECTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evCECTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1242,9 +1200,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -1254,9 +1210,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
 
                 /**
                  * Save protocol
@@ -1264,7 +1218,7 @@ class Cte extends Dfe
                 if ($response->getExtra('parse.infEvento.cStat') == 135) {
                     $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
                     $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
-                    $response->addExtra([
+                    $response->setExtras([
                         'parse.procXML' => $canc,
                         'parse.pathXML' => $fileCanc
                     ]);
@@ -1311,7 +1265,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1320,7 +1274,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evCancCECTe' => $detEvent['evCancCECTe']
-            ]), "{$this->schemaPath}/evCancCECTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evCancCECTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1347,9 +1301,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -1359,9 +1311,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
 
                 /**
                  * Save protocol
@@ -1369,7 +1319,7 @@ class Cte extends Dfe
                 if ($response->getExtra('parse.infEvento.cStat') == 135) {
                     $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
                     $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
-                    $response->addExtra([
+                    $response->setExtras([
                         'parse.procXML' => $canc,
                         'parse.pathXML' => $fileCanc
                     ]);
@@ -1415,7 +1365,7 @@ class Cte extends Dfe
             /**
              * Validate main event structure
              */
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoCTe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1424,7 +1374,7 @@ class Cte extends Dfe
              */
             XsdSchema::validate(Xml::arrayToXml([
                 'evPrestDesacordo' => $detEvent['evPrestDesacordo']
-            ]), "{$this->schemaPath}/evPrestDesacordo_v{$this->urlVersion}.xsd", $this->urlPortal);
+            ]), "{$this->schemaPath}/evPrestDesacordo_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1451,9 +1401,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -1463,9 +1411,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
 
                 /**
                  * Save protocol
@@ -1473,7 +1419,7 @@ class Cte extends Dfe
                 if ($response->getExtra('parse.infEvento.cStat') == 135) {
                     $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
                     $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
-                    $response->addExtra([
+                    $response->setExtras([
                         'parse.procXML' => $canc,
                         'parse.pathXML' => $fileCanc
                     ]);
@@ -1536,7 +1482,7 @@ class Cte extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/distDFeInt_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/distDFeInt_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -1563,9 +1509,7 @@ class Cte extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -1575,9 +1519,7 @@ class Cte extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;

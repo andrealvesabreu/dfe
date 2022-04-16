@@ -88,9 +88,7 @@ class Nfe extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -100,9 +98,7 @@ class Nfe extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -250,9 +246,7 @@ class Nfe extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -262,9 +256,7 @@ class Nfe extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
 
                 /**
                  * Save protocol
@@ -272,7 +264,7 @@ class Nfe extends Dfe
                 if ($response->getExtra('parse.infEvento.cStat') == 135) {
                     $canc = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoCTe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoCTe>";
                     $fileCanc = "{$paths['document']}/{$baseName}-procEventoCTe.xml";
-                    $response->addExtra([
+                    $response->setExtras([
                         'parse.procXML' => $canc,
                         'parse.pathXML' => $fileCanc
                     ]);
@@ -377,9 +369,7 @@ class Nfe extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -389,9 +379,7 @@ class Nfe extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;

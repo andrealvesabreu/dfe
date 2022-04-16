@@ -117,14 +117,13 @@ class Certificate
             Message::MSG_ERROR, // Message type
             false);
         }
-        $okMessage = new SystemMessage("Digital certificate OK.", // Message
+        return new SystemMessage("Digital certificate OK.", // Message
         '100', // System code
         Message::MSG_OK, // Message type
-        true);
-        $okMessage->addExtra([
+        true, // Status
+        [
             'expiresIn' => $context->validTo->format('Y-m-d H:i:s')
         ]);
-        return $okMessage;
     }
 
     /**

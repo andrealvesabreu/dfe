@@ -56,13 +56,13 @@ class Dfe
             'schema' => [
                 '58' => 'evIncCondutorMDFe'
             ],
-            'desc' => 'Inclusão de Condutor'
+            'desc' => 'Inclusao Condutor'
         ], // Event destined to the inclusion of driver
         '110115' => [
             'schema' => [
                 '58' => 'evInclusaoDFeMDFe'
             ],
-            'desc' => 'Inclusão de DF-e'
+            'desc' => 'Inclusao DF-e'
         ],
         '110160' => [ // Event designed to link information on services provided to CT-e multimodal. Note that, if a CT-e is issued that is already linked to the multimodal CT-e, it is not necessary to inform it for this event.
             'schema' => [
@@ -456,13 +456,6 @@ class Dfe
      */
 
     /**
-     * WS version in use
-     *
-     * @var string|null
-     */
-    protected ?string $urlVersion = null;
-
-    /**
      * URL of specific service
      *
      * @var string|null
@@ -503,6 +496,20 @@ class Dfe
      * @var string|null
      */
     protected ?string $urlPortal = null;
+
+    /**
+     * WS version in use
+     *
+     * @var string|null
+     */
+    protected ?string $urlVersion = null;
+
+    /**
+     * XSD version to validate
+     *
+     * @var string|null
+     */
+    protected ?string $xsdVersion = null;
 
     /**
      * Base dir for XSD schemas
@@ -847,6 +854,8 @@ class Dfe
         }
         // Get version
         $this->urlVersion = $dadosAut['version'];
+        // Set XSD version
+        $this->xsdVersion = $dadosAut['xsdVersion'] ?? $dadosAut['version'];
         // Get from the service url
         $this->urlWsdl = $dadosAut['url'];
         // Get from service url
@@ -944,17 +953,13 @@ class Dfe
          */
         if ($result->isOk()) {
             if (method_exists($this, 'responseFilter')) {
-                $result->addExtra([
-                    'data.received' => $this->responseFilter($result->getExtra('data.received'))
-                ]);
+                $result->setExtra('data.received', $this->responseFilter($result->getExtra('data.received')));
             }
             /**
              * If it's all ok till then, add paths to save files
              * Set paths to save files
              */
-            $result->addExtra([
-                'paths' => $paths
-            ]);
+            $result->setExtra('paths', $paths);
             /**
              * Process response with ParserResponse
              *
@@ -967,9 +972,7 @@ class Dfe
             /**
              * Add parsed data to response/result
              */
-            $result->addExtra([
-                'parse' => $parsed
-            ]);
+            $result->setExtra('parse', $parsed);
         }
         return $result;
     }
@@ -1002,7 +1005,7 @@ class Dfe
              */
             case 'CteRecepcaoEvento':
             case 'RecepcaoEvento':
-                // case 'MDFeRecepcaoEvento':
+            case 'MDFeRecepcaoEvento':
                 $match = [];
                 if (preg_match('/tpEvento>(.*?)<\/tpEvento/', $xml->getXml(), $match) == 1) {
                     if (isset($this->eventCode[$match[1]])) {
@@ -1016,7 +1019,7 @@ class Dfe
                                 $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.CteRecepcaoEvento.{$this->eventCode[$match[1]]['schema'][$this->mod]}");
                                 break;
                             case 58:
-                                $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.MdfeRecepcaoEvento.{$this->eventCode[$match[1]]['schema'][$this->mod]}");
+                                $resp = Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.MDFeRecepcaoEvento.{$this->eventCode[$match[1]]['schema'][$this->mod]}");
                                 break;
                         }
                     } else {
@@ -1032,9 +1035,9 @@ class Dfe
              * Emission webservices
              */
             case 'CteRecepcao':
-                // case 'CteRecepcaoOS':
-                // case 'MDFeRecepcao':
-                // case 'MDFeRecepcaoSinc':
+            case 'CteRecepcaoOS':
+            case 'MDFeRecepcao':
+            case 'MDFeRecepcaoSinc':
                 $resp = [
                     'request' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.request"),
                     'response' => Config::get("dfe.{$this->xMod}.paths.{$this->tpAmb}.{$this->urlService}.response"),
@@ -1293,7 +1296,7 @@ class Dfe
         // inicializa a variavel que irá receber a assinatura
         $signature = '';
         // executa a assinatura digital usando o resource da chave privada
-        $resp = openssl_sign($dados, $signature, $pkeyid);
+        openssl_sign($dados, $signature, $pkeyid);
         // codifica assinatura para o padrao base64
         $signatureValue = base64_encode($signature);
         // SignatureValue

@@ -16,7 +16,7 @@ try {
         'version' => '3.00',
         'saveFiles' => true,
         'xUF' => 'RS',
-        'tpAmb' => 1,
+        'tpAmb' => 2,
         'CNPJ' => $CNPJ,
         'schemaBasePath' => ROOT_DIR . '/tests/schemas'
         // Optionals

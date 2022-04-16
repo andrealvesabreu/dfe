@@ -54,10 +54,74 @@ class Mdfe extends Dfe
                 'xml' => '__xml__'
             ]
         ];
+        $noXmlDeclaration = Xml::clearXmlDeclaration($MDFe);
         $body = new Xml(str_replace('<xml>__xml__</xml>', // Replace special mark
-        implode('', Xml::clearXmlDeclaration($MDFe)), // Set documents
+        implode('', $noXmlDeclaration), // Set documents
         Xml::arrayToXml($body))); // Convert array to XML
-        return $this->send($body);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/enviMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            /**
+             * Save all signed files
+             * Multiple versions of every MDFe can be sent.
+             * Just append a new line if file already exists
+             */
+            $signedDocsPaths = [];
+            foreach ($noXmlDeclaration as $signed) {
+                $mdfeKey = [];
+                if (preg_match('/<infMDFe Id=\"MDFe(.+?)"/', $signed, $mdfeKey) && // If a match of MDFe key was found
+                Variable::nfeAccessKey()->validate($mdfeKey[1])) { // If matched key is valid
+                    $signedDocPath = "{$paths['document']}/{$mdfeKey[1]}.xml";
+                    $signedDocsPaths[] = $signedDocPath;
+                    file_put_contents($signedDocPath, $signed . PHP_EOL, FILE_APPEND);
+                }
+            }
+            /**
+             * Update document path to include all signed files as array
+             */
+            $response->setExtra('paths.document', $signedDocsPaths);
+            $baseName = "{$idLot}-" . date('Y_m_d-H_i_s');
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-enviMDFe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->setExtra('paths.request', $fileSent);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEnviMDFe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->setExtra('paths.response', $fileResponse);
+            }
+        }
+        return $response;
     }
 
     /**
@@ -117,7 +181,7 @@ class Mdfe extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consReciMDFe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consReciMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -144,9 +208,7 @@ class Mdfe extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -156,9 +218,7 @@ class Mdfe extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
                 /**
                  * If webservice provided a response
                  */
@@ -255,9 +315,7 @@ class Mdfe extends Dfe
                                     file_put_contents($procMDFeFile, $procXML);
                                     $protMDFe['procXML'] = $procXML;
                                     $protMDFe['pathXML'] = $procMDFeFile;
-                                    $response->addExtra([
-                                        "parse.protMDFe.{$cteKey}" => $protMDFe
-                                    ]);
+                                    $response->setExtra("parse.protMDFe.{$cteKey}", $protMDFe);
                                     /**
                                      * Set the right document on signed file to skip invalid data
                                      */
@@ -310,7 +368,7 @@ class Mdfe extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consSitMDFe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consSitMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -337,9 +395,7 @@ class Mdfe extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -349,9 +405,7 @@ class Mdfe extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -399,7 +453,7 @@ class Mdfe extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consMDFeNaoEnc_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consMDFeNaoEnc_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -426,9 +480,7 @@ class Mdfe extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -438,9 +490,7 @@ class Mdfe extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -473,7 +523,7 @@ class Mdfe extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consStatServMDFe_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consStatServMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -500,9 +550,7 @@ class Mdfe extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -512,9 +560,7 @@ class Mdfe extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -570,7 +616,7 @@ class Mdfe extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/distDFeInt_v{$this->urlVersion}.xsd", $this->urlPortal);
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/distDFeInt_v{$this->xsdVersion}.xsd", $this->urlPortal);
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -597,9 +643,7 @@ class Mdfe extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -609,48 +653,10 @@ class Mdfe extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
-    }
-
-    /**
-     * Cancellation event
-     *
-     * @param string $chMDFe
-     * @param int $nSeqEvent
-     * @param string $nProt
-     * @param string $xJust
-     * @return SystemMessage
-     */
-    public function cancel(string $chMDFe, int $nSeqEvent, string $nProt, string $xJust): SystemMessage
-    {
-        if (! Variable::nfeAccessKey()->validate($chMDFe)) {
-            return new SystemMessage("Invalid MDFe key: {$chMDFe}", // Message
-            '1', // System code
-            SystemMessage::MSG_ERROR, // System status code
-            false); // System status
-        }
-        $initialize = $this->prepare('MdfeRecepcaoEvento');
-        if (! $initialize->isOk()) {
-            return $initialize;
-        }
-        $type = '110111';
-        $detEvent = [
-            '@attributes' => [
-                'versaoEvento' => $this->urlVersion
-            ],
-            'evCancMDFee' => [
-                'descEvento' => $this->eventCode[$type],
-                'nProt' => $nProt,
-                'xJust' => $xJust
-            ]
-        ];
-        $xmlEvent = $this->event($chMDFe, $nSeqEvent, $type, $detEvent);
-        return $this->send($xmlEvent);
     }
 
     /**
@@ -664,6 +670,7 @@ class Mdfe extends Dfe
      */
     protected function event(string $chDFe, int $nSeqEvent, string $type, array $detEvent): Xml
     {
+        $nSeqEvent = str_pad((string) $nSeqEvent, 2, '0', STR_PAD_LEFT);
         $body = [
             'eventoMDFe' => [
                 '@attributes' => [
@@ -680,11 +687,441 @@ class Mdfe extends Dfe
                     'chMDFe' => $chDFe,
                     'dhEvento' => date('c'),
                     'tpEvento' => $type,
-                    'nSeqEvento' => str_pad((string) $nSeqEvent, 2, '0', STR_PAD_LEFT),
+                    'nSeqEvento' => intval($nSeqEvent),
                     'detEvento' => $detEvent
                 ]
             ]
         ];
         return new Xml($this->sign(Xml::arrayToXml($body), 'infEvento', 'Id', 'eventoMDFe'));
+    }
+
+    /**
+     * Cancellation event
+     * Fully implemented
+     *
+     * @param string $chMDFe
+     * @param string $nProt
+     * @param string $xJust
+     * @return SystemMessage
+     */
+    public function evCancMDFe(string $chMDFe, string $nProt, string $xJust): SystemMessage
+    {
+        if (! Variable::nfeAccessKey()->validate($chMDFe)) {
+            return new SystemMessage("Invalid MDFe key: {$chMDFe}", // Message
+            '1', // System code
+            SystemMessage::MSG_ERROR, // System status code
+            false); // System status
+        }
+        $initialize = $this->prepare('MDFeRecepcaoEvento');
+        if (! $initialize->isOk()) {
+            return $initialize;
+        }
+        $tpEvent = '110111';
+        $detEvent = [
+            '@attributes' => [
+                'versaoEvento' => $this->urlVersion
+            ],
+            'evCancMDFe' => [
+                'descEvento' => $this->eventCode[$tpEvent]['desc'],
+                'nProt' => $nProt,
+                'xJust' => $xJust
+            ]
+        ];
+        $body = $this->event($chMDFe, 1, $tpEvent, $detEvent);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            /**
+             * Validate main event structure
+             */
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+            /**
+             * Validate specific event structure
+             */
+            XsdSchema::validate(Xml::arrayToXml([
+                'evCancMDFe' => $detEvent['evCancMDFe']
+            ]), "{$this->schemaPath}/evCancMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chMDFe}-{$tpEvent}-1";
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-eventoMDFe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->setExtra('paths.request', $fileSent);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEventoMDFe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->setExtra('paths.response', $fileResponse);
+
+                /**
+                 * Save protocol
+                 */
+                if ($response->getExtra('parse.infEvento.cStat') == 135) {
+                    $include = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoMDFe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoMDFe>";
+                    $fileInclude = "{$paths['document']}/{$baseName}-procEventoMDFe.xml";
+                    $response->setExtras([
+                        'parse.procXML' => $include,
+                        'parse.pathXML' => $fileInclude
+                    ]);
+                    file_put_contents($fileInclude, $include);
+                }
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * Finish event
+     * Fully implemented
+     *
+     * @param string $chMDFe
+     * @param string $nProt
+     * @param string $xJust
+     * @return SystemMessage
+     */
+    public function evEncMDFe(string $chMDFe, string $nProt, string $dtEnc, string $cMun): SystemMessage
+    {
+        if (! Variable::nfeAccessKey()->validate($chMDFe)) {
+            return new SystemMessage("Invalid MDFe key: {$chMDFe}", // Message
+            '1', // System code
+            SystemMessage::MSG_ERROR, // System status code
+            false); // System status
+        }
+        $initialize = $this->prepare('MDFeRecepcaoEvento');
+        if (! $initialize->isOk()) {
+            return $initialize;
+        }
+        $tpEvent = '110112';
+        $detEvent = [
+            '@attributes' => [
+                'versaoEvento' => $this->urlVersion
+            ],
+            'evEncMDFe' => [
+                'descEvento' => $this->eventCode[$tpEvent]['desc'],
+                'nProt' => $nProt,
+                'dtEnc' => $dtEnc,
+                'cUF' => substr($cMun, 0, 2),
+                'cMun' => $cMun
+            ]
+        ];
+        $body = $this->event($chMDFe, 1, $tpEvent, $detEvent);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            /**
+             * Validate main event structure
+             */
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+            /**
+             * Validate specific event structure
+             */
+            XsdSchema::validate(Xml::arrayToXml([
+                'evEncMDFe' => $detEvent['evEncMDFe']
+            ]), "{$this->schemaPath}/evEncMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chMDFe}-{$tpEvent}-1";
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-eventoMDFe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->setExtra('paths.request', $fileSent);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEventoMDFe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->setExtra('paths.response', $fileResponse);
+
+                /**
+                 * Save protocol
+                 */
+                if ($response->getExtra('parse.infEvento.cStat') == 135) {
+                    $include = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoMDFe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoMDFe>";
+                    $fileInclude = "{$paths['document']}/{$baseName}-procEventoMDFe.xml";
+                    $response->setExtras([
+                        'parse.procXML' => $include,
+                        'parse.pathXML' => $fileInclude
+                    ]);
+                    file_put_contents($fileInclude, $include);
+                }
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * Including driver
+     * Fully implemented
+     *
+     * @param string $chMDFe
+     * @param int $nSeqEvent
+     * @param string $nProt
+     * @param string $xJust
+     * @return SystemMessage
+     */
+    public function evIncCondutorMDFe(string $chMDFe, int $nSeqEvent, string $xNome, string $CPF): SystemMessage
+    {
+        if (! Variable::nfeAccessKey()->validate($chMDFe)) {
+            return new SystemMessage("Invalid MDFe key: {$chMDFe}", // Message
+            '1', // System code
+            SystemMessage::MSG_ERROR, // System status code
+            false); // System status
+        }
+        $initialize = $this->prepare('MDFeRecepcaoEvento');
+        if (! $initialize->isOk()) {
+            return $initialize;
+        }
+        $tpEvent = '110114';
+        $detEvent = [
+            '@attributes' => [
+                'versaoEvento' => $this->urlVersion
+            ],
+            'evIncCondutorMDFe' => [
+                'descEvento' => $this->eventCode[$tpEvent]['desc'],
+                'condutor' => [
+                    'xNome' => $xNome,
+                    'CPF' => $CPF
+                ]
+            ]
+        ];
+        $body = $this->event($chMDFe, $nSeqEvent, $tpEvent, $detEvent);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            /**
+             * Validate main event structure
+             */
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+            /**
+             * Validate specific event structure
+             */
+            XsdSchema::validate(Xml::arrayToXml([
+                'evIncCondutorMDFe' => $detEvent['evIncCondutorMDFe']
+            ]), "{$this->schemaPath}/evIncCondutorMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chMDFe}-{$tpEvent}-{$nSeqEvent}";
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-eventoMDFe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->setExtra('paths.request', $fileSent);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEventoMDFe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->setExtra('paths.response', $fileResponse);
+
+                /**
+                 * Save protocol
+                 */
+                if ($response->getExtra('parse.infEvento.cStat') == 135) {
+                    $include = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoMDFe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoMDFe>";
+                    $fileInclude = "{$paths['document']}/{$baseName}-procEventoMDFe.xml";
+                    $response->setExtras([
+                        'parse.procXML' => $include,
+                        'parse.pathXML' => $fileInclude
+                    ]);
+                    file_put_contents($fileInclude, $include);
+                }
+            }
+        }
+        return $response;
+    }
+
+    /**
+     * Adding DFe to a MDFE
+     * Fully implemented
+     *
+     * @param string $chMDFe
+     * @param int $nSeqEvent
+     * @param string $nProt
+     * @param string $cMunCarrega
+     * @param string $xMunCarrega
+     * @param array $infDoc
+     * @return SystemMessage
+     */
+    public function evInclusaoDFeMDFe(string $chMDFe, int $nSeqEvent, string $nProt, string $cMunCarrega, string $xMunCarrega, array $infDoc): SystemMessage
+    {
+        if (! Variable::nfeAccessKey()->validate($chMDFe)) {
+            return new SystemMessage("Invalid MDFe key: {$chMDFe}", // Message
+            '1', // System code
+            SystemMessage::MSG_ERROR, // System status code
+            false); // System status
+        }
+        $initialize = $this->prepare('MDFeRecepcaoEvento');
+        if (! $initialize->isOk()) {
+            return $initialize;
+        }
+        $tpEvent = '110115';
+        $detEvent = [
+            '@attributes' => [
+                'versaoEvento' => $this->urlVersion
+            ],
+            'evIncDFeMDFe' => [
+                'descEvento' => $this->eventCode[$tpEvent]['desc'],
+                'nProt' => $nProt,
+                'cMunCarrega' => $cMunCarrega,
+                'xMunCarrega' => $xMunCarrega,
+                'infDoc' => $infDoc
+            ]
+        ];
+        $body = $this->event($chMDFe, $nSeqEvent, $tpEvent, $detEvent);
+        /**
+         * Validate XML before send
+         */
+        if ($this->schemaPath != null) {
+            /**
+             * Validate main event structure
+             */
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/eventoMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+            /**
+             * Validate specific event structure
+             */
+            XsdSchema::validate(Xml::arrayToXml([
+                'evIncDFeMDFe' => $detEvent['evIncDFeMDFe']
+            ]), "{$this->schemaPath}/evInclusaoDFeMDFe_v{$this->xsdVersion}.xsd", $this->urlPortal);
+            if (XsdSchema::hasErrors()) {
+                return XsdSchema::getSystemErrors()[0];
+            }
+        }
+        /**
+         * Send to webservice
+         */
+        $response = $this->send($body);
+        /**
+         * Save files
+         *
+         * @var array|null $paths
+         */
+        $paths = $response->getExtra('paths');
+        if ($paths !== null) {
+            $baseName = "{$chMDFe}-{$tpEvent}-{$nSeqEvent}";
+            /**
+             * Save sent file
+             *
+             * @var string $fileSent
+             */
+            $fileSent = "{$paths['request']}/{$baseName}-eventoMDFe.xml";
+            file_put_contents($fileSent, $body->getXml());
+            /**
+             * Update request path to include file name
+             */
+            $response->setExtra('paths.request', $fileSent);
+            /**
+             * Save response file, if server has processed request succefully
+             */
+            if ($response->isOk()) {
+                $fileResponse = "{$paths['response']}/{$baseName}-retEventoMDFe.xml";
+                file_put_contents($fileResponse, $response->getExtra('data.received'));
+                /**
+                 * Update response path to include file name
+                 */
+                $response->setExtra('paths.response', $fileResponse);
+
+                /**
+                 * Save protocol
+                 */
+                if ($response->getExtra('parse.infEvento.cStat') == 135) {
+                    $include = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><procEventoMDFe versao=\"{$response->getExtra('parse.infEvento.versao')}\">" . Xml::clearXmlDeclaration($body->getXml()) . Xml::clearXmlDeclaration($response->getExtra('data.received')) . "</procEventoMDFe>";
+                    $fileInclude = "{$paths['document']}/{$baseName}-procEventoMDFe.xml";
+                    $response->setExtras([
+                        'parse.procXML' => $include,
+                        'parse.pathXML' => $fileInclude
+                    ]);
+                    file_put_contents($fileInclude, $include);
+                }
+            }
+        }
+        return $response;
     }
 }

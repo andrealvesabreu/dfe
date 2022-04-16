@@ -72,7 +72,7 @@ class Gnre extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consulta_config_uf_v{$this->urlVersion}.xsd", 'http://www.gnre.pe.gov.br');
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consulta_config_uf_v{$this->xsdVersion}.xsd", 'http://www.gnre.pe.gov.br');
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -98,9 +98,7 @@ class Gnre extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -110,9 +108,7 @@ class Gnre extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -137,7 +133,7 @@ class Gnre extends Dfe
          * Validade input
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/lote_gnre_v{$this->urlVersion}.xsd", 'http://www.gnre.pe.gov.br');
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/lote_gnre_v{$this->xsdVersion}.xsd", 'http://www.gnre.pe.gov.br');
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -164,9 +160,7 @@ class Gnre extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -176,9 +170,7 @@ class Gnre extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -215,7 +207,7 @@ class Gnre extends Dfe
          * Validade input
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/lote_gnre_consulta_v{$this->urlVersion}.xsd", 'http://www.gnre.pe.gov.br');
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/lote_gnre_consulta_v{$this->xsdVersion}.xsd", 'http://www.gnre.pe.gov.br');
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -242,9 +234,7 @@ class Gnre extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -254,9 +244,7 @@ class Gnre extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;
@@ -290,7 +278,7 @@ class Gnre extends Dfe
          * Validade input
          */
         if ($this->schemaPath != null) {
-            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/lote_gnre_consulta_v{$this->urlVersion}.xsd", 'http://www.gnre.pe.gov.br');
+            XsdSchema::validate($body->getXml(), "{$this->schemaPath}/lote_gnre_consulta_v{$this->xsdVersion}.xsd", 'http://www.gnre.pe.gov.br');
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];
             }
@@ -317,9 +305,7 @@ class Gnre extends Dfe
             /**
              * Update request path to include file name
              */
-            $response->addExtra([
-                'paths.request' => $fileSent
-            ]);
+            $response->setExtra('paths.request', $fileSent);
             /**
              * Save response file, if server has processed request succefully
              */
@@ -329,9 +315,7 @@ class Gnre extends Dfe
                 /**
                  * Update response path to include file name
                  */
-                $response->addExtra([
-                    'paths.response' => $fileResponse
-                ]);
+                $response->setExtra('paths.response', $fileResponse);
             }
         }
         return $response;

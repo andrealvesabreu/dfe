@@ -237,9 +237,17 @@ class Mdfe extends Base
     public static function MDFeRecepcaoEvento(Xml $xml): array
     {
         $aData = Arrays::get(Xml::xmlToArray($xml->getXml()), 'retEventoMDFe');
+        Arrays::set($aData, 'infEvento.versao', Arrays::get($aData, '@attributes.versao'));
         Arrays::forget($aData, [
+            'infEvento.@attributes',
             '@attributes'
         ]);
+        /**
+         * Adding control info
+         */
+        Arrays::set($aData, 'cType', self::$messages[$aData['infEvento']['cStat']]['type']);
+        Arrays::set($aData, 'xReason', self::$messageType[$aData['cType']]);
+        Arrays::set($aData, 'bStat', $aData['cType'] == 1);
         return $aData;
     }
 
@@ -370,16 +378,16 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Consulta Não Encerrados não localizou MDF-e nessa situação'
         ],
-        '132' => [
-            'type' => 0,
+        '132' => [ // Verified
+            'type' => 1,
             'message' => 'Encerramento de MDF-e homologado'
         ],
         '134' => [
             'type' => 0,
             'message' => 'Evento registrado com alerta para situação'
         ],
-        '135' => [
-            'type' => 0,
+        '135' => [ // Verified
+            'type' => 1,
             'message' => 'Evento registrado e vinculado a MDF-e'
         ],
         '136' => [
@@ -838,7 +846,7 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: A data do evento não pode ser maior que a data do processamento'
         ],
-        '636' => [
+        '636' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: O número sequencial do evento é maior que o permitido'
         ],
@@ -1018,7 +1026,7 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: Modal inválido para entrega parcial (apenas modal aéreo)'
         ],
-        '703' => [
+        '703' => [ // Verified
             'type' => 0,
             'message' => 'Rejeição: Carregamento e Descarregamento inválidos para MDF-e com indicação de carregamento posterior'
         ],
@@ -1038,8 +1046,8 @@ class Mdfe extends Base
             'type' => 0,
             'message' => 'Rejeição: MDF-e com indicação de carregamento posterior com tipo de emitente diferente de transporte próprio'
         ],
-        '708' => [
-            'type' => 0,
+        '708' => [ // Verified
+            'type' => 7,
             'message' => 'Rejeição: MDF-e deve possui indicação de carregamento posterior para inclusão de DF-e'
         ],
         '709' => [

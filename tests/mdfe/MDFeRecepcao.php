@@ -1,21 +1,21 @@
 <?php
-include 'gnre_base.php';
-use Inspire\Dfe\Gnre;
+include 'mdfe_base.php';
+use Inspire\Dfe\Mdfe;
 use Inspire\Dfe\Certificate;
 use Inspire\Config\Config;
+use Inspire\Validator\Variable;
 use Inspire\Dfe\Cte\ParserResponse;
 use Inspire\Support\Xml\Xml;
-use Inspire\Validator\ {
-    Variable,
-    XsdSchema
-};
 
+// var_dump(Variable::nfeAccessKey()->validate(''));
+// exit;
 /**
- * Check current status of CT -e configuration and sent
+ * Check current status of MDF -e configuration and sent
  */
 try {
-    $gnre = new Gnre([
-        'version' => '2.00',
+    $mdfe = new Mdfe([
+        'mod' => '58',
+        'version' => '3.00',
         'saveFiles' => true,
         'xUF' => 'RS',
         'tpAmb' => 2,
@@ -25,7 +25,11 @@ try {
         // 'date' => '2021-02-28',
         // 'UF' => '43'
     ], $cert);
-    $send = $gnre->GnreConfigUF('100030');
+    // echo $mdfe->sign('', 'infMDFe', 'Id');
+    // exit();
+    $send = $mdfe->MDFeRecepcao('123465789', [
+        '[xml1]'
+    ]);
     if ($send->isOk()) {
         var_dump($send->getExtra());
     } else {
