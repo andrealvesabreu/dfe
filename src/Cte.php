@@ -38,6 +38,17 @@ class Cte extends Dfe
 {
 
     /**
+     *
+     * @param array $config
+     * @param Certificate $cert
+     */
+    public function __construct(array $config, Certificate $cert)
+    {
+        $config['mod'] = $config['mod'] ?? '57';
+        parent::__construct($config, $cert);
+    }
+
+    /**
      * Cargo Transport CT-e Reception Service
      * Send a lot to webservice
      * Fully implemented

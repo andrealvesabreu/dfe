@@ -160,7 +160,13 @@ class Dfe
             'MDFeStatusServico',
             'MDFeConsNaoEnc',
             'MDFeDistribuicaoDFe',
-            'MDFeRecepcaoSinc'
+            'MDFeRecepcaoSinc',
+            /**
+             * DTe
+             */
+            'DTeRecepcaoLote',
+            'DTeRetRecepcao',
+            'DTeRecepcaoEvento'
         ],
         '67' => [
             'CteRecepcaoOS',
@@ -717,7 +723,7 @@ class Dfe
      * @param array $config
      * @param Certificate $cert
      */
-    public function __construct(?array $config, ?Certificate $cert)
+    public function __construct(array $config, Certificate $cert)
     {
         $this->date = date('Y-m-d');
         if (is_array($config) && ! empty($config) && $cert !== null) {
@@ -756,7 +762,7 @@ class Dfe
         else if (isset($config['date']) && ! Variable::date()->validate($config['date'])) {
             throw new \Exception("Date '{$config['date']}' is not a valid date in format YYY-MM-DD.");
         } /**
-         * Check if there is sme service available for document model
+         * Check if there is some service available for document model
          */
         else if (! isset($this->servicesAvailable[$config['mod']]) || empty($this->servicesAvailable[$config['mod']])) {
             throw new \Exception("There is no services available for document model {$config['mod']}");
@@ -876,11 +882,7 @@ class Dfe
         /**
          * Set schema path
          */
-        if ($this->mod == 23) {
-            $this->schemaPath = sprintf("%s/%s/%s", $this->schemaBasePath, $this->xMod, Strings::integer($this->version));
-        } else {
-            $this->schemaPath = sprintf("%s/%s/%s", $this->schemaBasePath, $this->xMod, Strings::integer($this->urlVersion));
-        }
+        $this->schemaPath = sprintf("%s/%s/%s", $this->schemaBasePath, $this->xMod, Strings::integer($this->urlVersion));
         return new SystemMessage("OK", // Message
         '1', // System code
         SystemMessage::MSG_OK, // System status code

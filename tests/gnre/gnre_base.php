@@ -26,4 +26,4 @@ $validate = $cert->check(ROOT_DIR . '/tests/certs/cert.pfx', // Certificate path
 '190617'); // Certificate password
 echo "Certificate is valid ultill {$validate->getExtra('expiresIn')}\n\n";
 
-$CNPJ = 'cert';
+$CNPJ = 'CNPJ';

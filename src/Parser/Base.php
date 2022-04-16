@@ -3,7 +3,7 @@ declare(strict_types = 1);
 namespace Inspire\Dfe\Parser;
 
 /**
- * Description of ParserResponse
+ * Description of Base
  *
  * @author aalves
  */

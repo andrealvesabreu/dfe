@@ -2,15 +2,11 @@
 declare(strict_types = 1);
 namespace Inspire\Dfe;
 
-use Inspire\Validator\ {
-    Variable,
-    XsdSchema
-};
+use Inspire\Validator\XsdSchema;
 use Inspire\Support\Message\System\SystemMessage;
 use Inspire\Support\Xml\Xml;
 use Inspire\Support\ {
-    Arrays,
-    Strings
+    Arrays
 };
 
 /**
@@ -33,7 +29,12 @@ use Inspire\Support\ {
 class Gnre extends Dfe
 {
 
-    public function __construct($config, $cert)
+    /**
+     *
+     * @param array $config
+     * @param Certificate $cert
+     */
+    public function __construct(array $config, Certificate $cert)
     {
         $config['mod'] = '23';
         parent::__construct($config, $cert);
@@ -72,6 +73,7 @@ class Gnre extends Dfe
          * Validate XML before send
          */
         if ($this->schemaPath != null) {
+            var_dump("{$this->schemaPath}/consulta_config_uf_v{$this->xsdVersion}.xsd");
             XsdSchema::validate($body->getXml(), "{$this->schemaPath}/consulta_config_uf_v{$this->xsdVersion}.xsd", 'http://www.gnre.pe.gov.br');
             if (XsdSchema::hasErrors()) {
                 return XsdSchema::getSystemErrors()[0];

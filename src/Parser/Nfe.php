@@ -9,7 +9,7 @@ use Inspire\Support\ {
 };
 
 /**
- * Description of ParserResponse
+ * Description of Nfe
  *
  * @author aalves
  */

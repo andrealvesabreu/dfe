@@ -37,6 +37,17 @@ class Nfe extends Dfe
 {
 
     /**
+     *
+     * @param array $config
+     * @param Certificate $cert
+     */
+    public function __construct(array $config, Certificate $cert)
+    {
+        $config['mod'] = $config['mod'] ?? '55';
+        parent::__construct($config, $cert);
+    }
+
+    /**
      * Query WS status
      *
      * @return \Inspire\Support\Message\System\SystemMessage

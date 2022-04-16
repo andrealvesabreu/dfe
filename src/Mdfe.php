@@ -32,6 +32,17 @@ class Mdfe extends Dfe
 {
 
     /**
+     *
+     * @param array $config
+     * @param Certificate $cert
+     */
+    public function __construct(array $config, Certificate $cert)
+    {
+        $config['mod'] = '58';
+        parent::__construct($config, $cert);
+    }
+
+    /**
      * Send a lot to webservice
      *
      * @param string $idLot
