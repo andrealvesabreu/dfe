@@ -1,9 +1,11 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
+
 namespace Inspire\Dfe\Parser;
 
 use Inspire\Support\Xml\Xml;
-use Inspire\Support\ {
+use Inspire\Support\{
     Arrays,
     Strings
 };
@@ -85,12 +87,12 @@ class Nfe extends Base
         /**
          * Ig there is some event or document, process data
          */
-        if ($aData['bStat'] && ! empty($aData['loteDistDFeInt'])) {
+        if ($aData['bStat'] && !empty($aData['loteDistDFeInt'])) {
             $loteDistDFeInt = [];
             /**
-             * Noraliza package case there is a single document
+             * Normaliza package case there is a single document
              */
-            if (! isset($aData['loteDistDFeInt']['docZip'][0])) {
+            if (!isset($aData['loteDistDFeInt']['docZip'][0])) {
                 $aData['loteDistDFeInt']['docZip'] = [
                     $aData['loteDistDFeInt']['docZip']
                 ];
@@ -99,7 +101,8 @@ class Nfe extends Base
             foreach ($docs as $doc) {
                 $schema = strtok(Arrays::get($doc, '@attributes.schema'), '_');
                 if ((self::$unpack !== null && Arrays::keyCheck($schema, self::$unpack)) || // Some type of package is set and actual package is one of that
-                self::$unpack === null) {
+                    self::$unpack === null
+                ) {
                     $loteDistDFeInt[] = [
                         'NSU' => Strings::toInt(Arrays::get($doc, '@attributes.NSU')),
                         'schema' => $schema,
@@ -209,8 +212,8 @@ class Nfe extends Base
             'type' => 0,
             'message' => 'Nenhum documento localizado para o Destinatário'
         ],
-        '138' => [
-            'type' => 0,
+        '138' => [ //Verified
+            'type' => 1,
             'message' => 'Documento localizado para o Destinatário'
         ],
         '139' => [
@@ -1983,4 +1986,3 @@ class Nfe extends Base
         ]
     ];
 }
-

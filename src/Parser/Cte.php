@@ -1,9 +1,11 @@
 <?php
-declare(strict_types = 1);
+
+declare(strict_types=1);
+
 namespace Inspire\Dfe\Parser;
 
 use Inspire\Support\Xml\Xml;
-use Inspire\Support\ {
+use Inspire\Support\{
     Arrays,
     Strings
 };
@@ -232,8 +234,8 @@ class Cte extends Base
             /**
              * Check if there is a procEventoCTe group
              */
-            if (isset($aData['procEventoCTe']) && ! empty($aData['procEventoCTe'])) {
-                if (! isset($aData['procEventoCTe'][0])) {
+            if (isset($aData['procEventoCTe']) && !empty($aData['procEventoCTe'])) {
+                if (!isset($aData['procEventoCTe'][0])) {
                     $aData['procEventoCTe'] = [
                         $aData['procEventoCTe']
                     ];
@@ -335,12 +337,12 @@ class Cte extends Base
         /**
          * Ig there is some event or document, process data
          */
-        if ($aData['bStat'] && ! empty($aData['loteDistDFeInt'])) {
+        if ($aData['bStat'] && !empty($aData['loteDistDFeInt'])) {
             $loteDistDFeInt = [];
             /**
              * Noraliza package case there is a single document
              */
-            if (! isset($aData['loteDistDFeInt']['docZip'][0])) {
+            if (!isset($aData['loteDistDFeInt']['docZip'][0])) {
                 $aData['loteDistDFeInt']['docZip'] = [
                     $aData['loteDistDFeInt']['docZip']
                 ];
@@ -349,7 +351,8 @@ class Cte extends Base
             foreach ($docs as $doc) {
                 $schema = strtok(Arrays::get($doc, '@attributes.schema'), '_');
                 if ((self::$unpack !== null && Arrays::keyCheck($schema, self::$unpack)) || // Some type of package is set and actual package is one of that
-                self::$unpack === null) {
+                    self::$unpack === null
+                ) {
                     $loteDistDFeInt[] = [
                         'NSU' => Strings::toInt(Arrays::get($doc, '@attributes.NSU')),
                         'schema' => $schema,
@@ -362,7 +365,7 @@ class Cte extends Base
         }
         return $aData;
     }
-
+    
     /**
      *
      * @param string $code
@@ -2292,4 +2295,3 @@ class Cte extends Base
         ]
     ];
 }
-
